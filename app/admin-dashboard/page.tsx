@@ -4,125 +4,77 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import {
+  toAppointmentView,
+  toAvailabilityView,
+  AVAILABILITY_TIME_OPTIONS,
+  clockToMinutes,
+  formatDisplayTime,
+  toClockValue,
+  type AppointmentMode,
+  type AppointmentStatus,
+  type AppointmentView,
+  type AvailabilityView,
+  type Profile,
+} from "@/lib/types";
 
 type Tab =
   | "dashboard"
+  | "students"
   | "availability"
   | "appointments"
   | "analytics";
 
-type AppointmentStatus =
-  | "Pending"
-  | "Confirmed"
-  | "Completed"
-  | "Cancelled";
+type Appointment = AppointmentView;
+type Availability = AvailabilityView;
+type Student = Profile;
 
-type AppointmentMode = "Online" | "In-person";
+const DEMO_STUDENT_EMAILS = new Set([
+  "juan@example.com",
+  "maria@example.com",
+  "john@example.com",
+  "angela@example.com",
+]);
 
-type Appointment = {
-  id: string;
-  studentName: string;
-  studentId: string;
-  email: string;
-  yearLevel: string;
-  appointmentType: string;
-  mode: AppointmentMode;
-  date: string;
-  time: string;
-  status: AppointmentStatus;
-  meetingLink: string;
-};
+const DEMO_STUDENT_NAMES = new Set([
+  "juan dela cruz",
+  "maria santos",
+  "john reyes",
+  "angela garcia",
+]);
 
-type Availability = {
-  id: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  appointmentType: string;
-  mode: AppointmentMode;
-};
+function isKeptStudent(student: Profile) {
+  const name = (student.full_name || "").trim();
+  const email = (student.email || "").toLowerCase();
 
-const DEMO_APPOINTMENTS: Appointment[] = [
-  {
-    id: "A001",
-    studentName: "Juan Dela Cruz",
-    studentId: "2024-00123",
-    email: "juan@example.com",
-    yearLevel: "3rd Year",
-    appointmentType: "Initial Consultation",
-    mode: "Online",
-    date: "August 10, 2026",
-    time: "9:00 AM",
-    status: "Pending",
-    meetingLink: "",
-  },
-  {
-    id: "A002",
-    studentName: "Maria Santos",
-    studentId: "2024-00124",
-    email: "maria@example.com",
-    yearLevel: "2nd Year",
-    appointmentType: "Counseling Session",
-    mode: "Online",
-    date: "August 10, 2026",
-    time: "10:30 AM",
-    status: "Confirmed",
-    meetingLink: "",
-  },
-  {
-    id: "A003",
-    studentName: "John Reyes",
-    studentId: "2023-00451",
-    email: "john@example.com",
-    yearLevel: "4th Year",
-    appointmentType: "Follow-up Session",
-    mode: "In-person",
-    date: "August 11, 2026",
-    time: "1:00 PM",
-    status: "Pending",
-    meetingLink: "",
-  },
-  {
-    id: "A004",
-    studentName: "Angela Garcia",
-    studentId: "2024-00231",
-    email: "angela@example.com",
-    yearLevel: "1st Year",
-    appointmentType: "Initial Consultation",
-    mode: "Online",
-    date: "August 12, 2026",
-    time: "2:00 PM",
-    status: "Completed",
-    meetingLink: "",
-  },
-];
+  if (name.toLowerCase() === "student 1") return true;
+  if (!name) return false;
+  if (DEMO_STUDENT_EMAILS.has(email)) return false;
+  if (DEMO_STUDENT_NAMES.has(name.toLowerCase())) return false;
+  if (!student.student_id?.trim()) return false;
 
-const DEMO_AVAILABILITY: Availability[] = [
-  {
-    id: "S001",
-    date: "August 10, 2026",
-    startTime: "9:00 AM",
-    endTime: "10:00 AM",
-    appointmentType: "Initial Consultation",
-    mode: "Online",
-  },
-  {
-    id: "S002",
-    date: "August 10, 2026",
-    startTime: "10:30 AM",
-    endTime: "11:30 AM",
-    appointmentType: "Counseling Session",
-    mode: "Online",
-  },
-  {
-    id: "S003",
-    date: "August 11, 2026",
-    startTime: "1:00 PM",
-    endTime: "2:00 PM",
-    appointmentType: "Follow-up Session",
-    mode: "In-person",
-  },
-];
+  return true;
+}
+
+function isKeptAppointment(
+  row: { student_user_id: string | null; student_name: string; email: string },
+  keptStudents: Profile[]
+) {
+  const email = (row.email || "").toLowerCase();
+  const name = (row.student_name || "").trim().toLowerCase();
+
+  if (DEMO_STUDENT_EMAILS.has(email)) return false;
+  if (DEMO_STUDENT_NAMES.has(name)) return false;
+  if (name === "student 1") return true;
+
+  return keptStudents.some(
+    (student) =>
+      student.id === row.student_user_id ||
+      student.email.toLowerCase() === email ||
+      (student.full_name || "").trim().toLowerCase() === name
+  );
+}
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -136,15 +88,26 @@ export default function AdminDashboard() {
   const [availability, setAvailability] =
     useState<Availability[]>([]);
 
-  const [search, setSearch] = useState("");
+  const [students, setStudents] =
+    useState<Student[]>([]);
 
-  const [showScheduleForm, setShowScheduleForm] =
-    useState(false);
+  const [studentSearch, setStudentSearch] = useState("");
+
+  const [search, setSearch] = useState("");
 
   const [showAppointment, setShowAppointment] =
     useState<Appointment | null>(null);
 
+  function selectTab(tab: Tab) {
+    setShowAppointment(null);
+    setActiveTab(tab);
+  }
+
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [staffName, setStaffName] = useState("Administrator");
+  const [staffUserId, setStaffUserId] = useState<string | null>(null);
 
   // Schedule form
   const [date, setDate] = useState("");
@@ -152,177 +115,336 @@ export default function AdminDashboard() {
   const [endTime, setEndTime] = useState("");
 
   const [appointmentType, setAppointmentType] =
-    useState("Initial Consultation");
+    useState("Counseling Session");
 
   const [mode, setMode] =
     useState<AppointmentMode>("Online");
 
   // ============================================================
-  // LOGIN PROTECTION
+  // LOGIN PROTECTION + SUPABASE DATA
   // ============================================================
 
   useEffect(() => {
-    const loggedIn =
-      localStorage.getItem("psycheck_admin");
+    async function init() {
+      try {
+        const supabase = createClient();
 
-    if (loggedIn !== "true") {
-      router.replace("/login");
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          router.replace("/login");
+          return;
+        }
+
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("role, full_name, email")
+          .eq("id", user.id)
+          .single();
+
+        if (
+          profileError ||
+          !profile ||
+          (profile.role !== "counselor" && profile.role !== "admin")
+        ) {
+          await supabase.auth.signOut();
+          router.replace("/login");
+          return;
+        }
+
+        setStaffUserId(user.id);
+        setStaffName(
+          profile.full_name ||
+            (profile.role === "admin" ? "Administrator" : "Counselor")
+        );
+
+        await loadData();
+      } catch (err) {
+        setLoadError(
+          err instanceof Error
+            ? err.message
+            : "Unable to connect to Supabase. Check .env.local"
+        );
+        setLoading(false);
+      }
+    }
+
+    init();
+  }, [router]);
+
+  async function loadData() {
+    const supabase = createClient();
+
+    const [appointmentsRes, availabilityRes, studentsRes] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("availability")
+        .select("*")
+        .order("date", { ascending: true }),
+      supabase
+        .from("profiles")
+        .select("*")
+        .eq("role", "student")
+        .order("created_at", { ascending: false }),
+    ]);
+
+    if (appointmentsRes.error) {
+      setLoadError(appointmentsRes.error.message);
+      setLoading(false);
       return;
     }
 
-    loadData();
-  }, [router]);
-
-  function loadData() {
-    const storedAppointments =
-      localStorage.getItem("psycheck_appointments");
-
-    const storedAvailability =
-      localStorage.getItem("psycheck_availability");
-
-    if (storedAppointments) {
-      setAppointments(JSON.parse(storedAppointments));
-    } else {
-      setAppointments(DEMO_APPOINTMENTS);
-      localStorage.setItem(
-        "psycheck_appointments",
-        JSON.stringify(DEMO_APPOINTMENTS)
-      );
+    if (availabilityRes.error) {
+      setLoadError(availabilityRes.error.message);
+      setLoading(false);
+      return;
     }
 
-    if (storedAvailability) {
-      setAvailability(JSON.parse(storedAvailability));
-    } else {
-      setAvailability(DEMO_AVAILABILITY);
-      localStorage.setItem(
-        "psycheck_availability",
-        JSON.stringify(DEMO_AVAILABILITY)
-      );
+    if (studentsRes.error) {
+      setLoadError(studentsRes.error.message);
+      setLoading(false);
+      return;
     }
+
+    const registeredStudents = (studentsRes.data || []).filter(isKeptStudent);
+
+    setAppointments(
+      (appointmentsRes.data || [])
+        .filter((row) => isKeptAppointment(row, registeredStudents))
+        .map(toAppointmentView)
+    );
+    setAvailability(
+      (availabilityRes.data || [])
+        .filter((row) => row.counselor_id)
+        .map(toAvailabilityView)
+    );
+    setStudents(registeredStudents);
+    setLoadError("");
+    setLoading(false);
   }
 
   // ============================================================
   // LOGOUT
   // ============================================================
 
-  const handleLogout = () => {
-    localStorage.removeItem("psycheck_admin");
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
     router.push("/login");
   };
 
-  function saveAppointments(
-    updated: Appointment[]
-  ) {
-    setAppointments(updated);
-
-    localStorage.setItem(
-      "psycheck_appointments",
-      JSON.stringify(updated)
-    );
-  }
-
-  function saveAvailability(
-    updated: Availability[]
-  ) {
-    setAvailability(updated);
-
-    localStorage.setItem(
-      "psycheck_availability",
-      JSON.stringify(updated)
-    );
-  }
-
-  function createSchedule() {
+  async function createSchedule() {
     if (!date || !startTime || !endTime) {
       setMessage("Please complete all schedule fields.");
       return;
     }
 
-    const newSchedule: Availability = {
-      id: crypto.randomUUID(),
-      date: formatDate(date),
-      startTime: formatTime(startTime),
-      endTime: formatTime(endTime),
-      appointmentType,
-      mode,
-    };
+    const startMinutes = clockToMinutes(startTime);
+    const endMinutes = clockToMinutes(endTime);
 
-    saveAvailability([
-      ...availability,
-      newSchedule,
-    ]);
+    if (
+      startMinutes === null ||
+      endMinutes === null ||
+      endMinutes <= startMinutes
+    ) {
+      setMessage("End time must be later than the start time.");
+      return;
+    }
 
-    setDate("");
-    setStartTime("");
-    setEndTime("");
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    setMessage("Availability successfully added.");
+      if (!user) {
+        setMessage("Please log in again before adding availability.");
+        return;
+      }
 
-    setTimeout(() => {
-      setMessage("");
-    }, 3000);
+      const { error } = await supabase.from("availability").insert({
+        counselor_id: user.id,
+        date,
+        start_time: toClockValue(startTime),
+        end_time: toClockValue(endTime),
+        appointment_type: appointmentType,
+        mode,
+      });
+
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+
+      setDate("");
+      setStartTime("");
+      setEndTime("");
+      setMessage("Availability successfully added.");
+      await loadData();
+
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Failed to add availability."
+      );
+    }
   }
 
-  function removeSchedule(id: string) {
-    const updated = availability.filter(
-      (item) => item.id !== id
-    );
+  async function removeSchedule(id: string) {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("availability")
+        .delete()
+        .eq("id", id);
 
-    saveAvailability(updated);
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+
+      await loadData();
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Failed to remove availability."
+      );
+    }
   }
 
-  function updateStatus(
+  async function updateStatus(
     id: string,
     status: AppointmentStatus
   ) {
-    const updated = appointments.map((appointment) =>
-      appointment.id === id
-        ? {
-            ...appointment,
-            status,
-          }
-        : appointment
+    const previous = appointments.find(
+      (appointment) => appointment.id === id
     );
 
-    saveAppointments(updated);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status })
+        .eq("id", id);
 
-    if (showAppointment?.id === id) {
-      setShowAppointment(
-        updated.find(
-          (appointment) => appointment.id === id
-        ) || null
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+
+      const updated = appointments.map((appointment) =>
+        appointment.id === id
+          ? {
+              ...appointment,
+              status,
+            }
+          : appointment
+      );
+
+      setAppointments(updated);
+
+      if (showAppointment?.id === id) {
+        setShowAppointment(
+          updated.find((appointment) => appointment.id === id) || null
+        );
+      }
+
+      if (status === "Confirmed" && previous?.status !== "Confirmed") {
+        const appointment = updated.find((item) => item.id === id);
+
+        try {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+
+          const response = await fetch("/api/notify-appointment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session?.access_token || ""}`,
+            },
+            body: JSON.stringify({ appointmentId: id }),
+          });
+
+          const payload = (await response.json()) as { error?: string };
+
+          if (!response.ok) {
+            setMessage(
+              payload.error ||
+                "Appointment approved, but the student email could not be sent."
+            );
+            return;
+          }
+
+          setMessage(
+            `Appointment approved. A no-reply email was sent to ${appointment?.email || "the student"}.`
+          );
+        } catch {
+          setMessage(
+            "Appointment approved, but the student email could not be sent."
+          );
+        }
+
+        setTimeout(() => {
+          setMessage("");
+        }, 4000);
+      }
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Failed to update status."
       );
     }
   }
 
-  function saveMeetingLink(
+  async function saveMeetingLink(
     id: string,
     link: string
   ) {
-    const updated = appointments.map((appointment) =>
-      appointment.id === id
-        ? {
-            ...appointment,
-            meetingLink: link,
-          }
-        : appointment
-    );
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("appointments")
+        .update({ meeting_link: link })
+        .eq("id", id);
 
-    saveAppointments(updated);
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
 
-    if (showAppointment?.id === id) {
-      setShowAppointment(
-        updated.find(
-          (appointment) => appointment.id === id
-        ) || null
+      const updated = appointments.map((appointment) =>
+        appointment.id === id
+          ? {
+              ...appointment,
+              meetingLink: link,
+            }
+          : appointment
+      );
+
+      setAppointments(updated);
+
+      if (showAppointment?.id === id) {
+        setShowAppointment(
+          updated.find((appointment) => appointment.id === id) || null
+        );
+      }
+
+      setMessage("Video call link saved.");
+
+      setTimeout(() => {
+        setMessage("");
+      }, 2500);
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Failed to save meeting link."
       );
     }
-
-    setMessage("Video call link saved.");
-
-    setTimeout(() => {
-      setMessage("");
-    }, 2500);
   }
 
   const pending = appointments.filter(
@@ -333,13 +455,20 @@ export default function AdminDashboard() {
     (a) => a.status === "Confirmed"
   ).length;
 
-  const completed = appointments.filter(
-    (a) => a.status === "Completed"
-  ).length;
+  const filteredStudents = useMemo(() => {
+    const query = studentSearch.toLowerCase().trim();
 
-  const onlineAppointments = appointments.filter(
-    (a) => a.mode === "Online"
-  ).length;
+    if (!query) return students;
+
+    return students.filter((student) => {
+      return (
+        (student.full_name || "").toLowerCase().includes(query) ||
+        student.email.toLowerCase().includes(query) ||
+        (student.student_id || "").toLowerCase().includes(query) ||
+        (student.year_level || "").toLowerCase().includes(query)
+      );
+    });
+  }, [students, studentSearch]);
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter((appointment) => {
@@ -358,6 +487,40 @@ export default function AdminDashboard() {
       );
     });
   }, [appointments, search]);
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7faf8]">
+        <p className="text-sm text-gray-500">
+          Loading admin dashboard...
+        </p>
+      </main>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7faf8] px-6">
+        <div className="max-w-lg rounded-2xl border border-red-200 bg-white p-8 text-center">
+          <h1 className="text-xl font-semibold text-gray-900">
+            Supabase connection needed
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-gray-600">
+            {loadError}
+          </p>
+          <p className="mt-3 text-sm text-gray-500">
+            Follow the steps in <code>supabase/README.md</code>.
+          </p>
+          <Link
+            href="/login"
+            className="mt-6 inline-block rounded-lg bg-[#087f3e] px-5 py-2.5 text-sm font-medium text-white"
+          >
+            Back to Login
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#f7faf8] text-gray-900">
@@ -402,7 +565,7 @@ export default function AdminDashboard() {
             <div className="hidden text-right md:block">
 
               <p className="text-sm font-semibold">
-                Administrator
+                {staffName}
               </p>
 
             </div>
@@ -439,7 +602,7 @@ export default function AdminDashboard() {
 
           <NavButton
             active={activeTab === "dashboard"}
-            onClick={() => setActiveTab("dashboard")}
+            onClick={() => selectTab("dashboard")}
           >
             <DashboardIcon />
             Dashboard
@@ -447,9 +610,24 @@ export default function AdminDashboard() {
 
 
           <NavButton
+            active={activeTab === "students"}
+            onClick={() => selectTab("students")}
+          >
+            <StudentsIcon />
+            Students
+
+            {students.length > 0 && (
+              <span className="ml-auto rounded-full bg-green-100 px-2 py-1 text-[10px] text-green-700">
+                {students.length}
+              </span>
+            )}
+          </NavButton>
+
+
+          <NavButton
             active={activeTab === "availability"}
             onClick={() =>
-              setActiveTab("availability")
+              selectTab("availability")
             }
           >
             <CalendarIcon />
@@ -460,7 +638,7 @@ export default function AdminDashboard() {
           <NavButton
             active={activeTab === "appointments"}
             onClick={() =>
-              setActiveTab("appointments")
+              selectTab("appointments")
             }
           >
             <AppointmentIcon />
@@ -478,7 +656,7 @@ export default function AdminDashboard() {
           <NavButton
             active={activeTab === "analytics"}
             onClick={() =>
-              setActiveTab("analytics")
+              selectTab("analytics")
             }
           >
             <ChartIcon />
@@ -504,10 +682,20 @@ export default function AdminDashboard() {
 
         <section className="min-w-0 flex-1 p-5 md:p-8">
 
+          {showAppointment && (
+            <AppointmentDetails
+              key={showAppointment.id}
+              appointment={showAppointment}
+              onClose={() => setShowAppointment(null)}
+              onStatusChange={updateStatus}
+              onSaveMeetingLink={saveMeetingLink}
+            />
+          )}
+
 
           {/* DASHBOARD */}
 
-          {activeTab === "dashboard" && (
+          {!showAppointment && activeTab === "dashboard" && (
 
             <div>
 
@@ -520,6 +708,12 @@ export default function AdminDashboard() {
               {/* STATISTICS */}
 
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+
+                <StatCard
+                  title="Registered Students"
+                  value={students.length}
+                  icon={<StudentsIcon />}
+                />
 
                 <StatCard
                   title="Total Appointments"
@@ -537,12 +731,6 @@ export default function AdminDashboard() {
                   title="Confirmed"
                   value={confirmed}
                   icon={<CheckIcon />}
-                />
-
-                <StatCard
-                  title="Online Sessions"
-                  value={onlineAppointments}
-                  icon={<VideoIcon />}
                 />
 
               </div>
@@ -573,7 +761,7 @@ export default function AdminDashboard() {
 
                     <button
                       onClick={() =>
-                        setActiveTab("appointments")
+                        selectTab("appointments")
                       }
                       className="text-xs font-medium text-[#087f3e] hover:underline"
                     >
@@ -659,7 +847,31 @@ export default function AdminDashboard() {
 
                     <button
                       onClick={() =>
-                        setActiveTab("availability")
+                        selectTab("students")
+                      }
+                      className="flex w-full items-center gap-3 rounded-lg border border-gray-100 p-4 text-left hover:bg-green-50"
+                    >
+
+                      <StudentsIcon />
+
+                      <div>
+
+                        <p className="text-sm font-medium">
+                          View Students
+                        </p>
+
+                        <p className="text-xs text-gray-500">
+                          {students.length} registered student(s)
+                        </p>
+
+                      </div>
+
+                    </button>
+
+
+                    <button
+                      onClick={() =>
+                        selectTab("availability")
                       }
                       className="flex w-full items-center gap-3 rounded-lg border border-gray-100 p-4 text-left hover:bg-green-50"
                     >
@@ -683,7 +895,7 @@ export default function AdminDashboard() {
 
                     <button
                       onClick={() =>
-                        setActiveTab("appointments")
+                        selectTab("appointments")
                       }
                       className="flex w-full items-center gap-3 rounded-lg border border-gray-100 p-4 text-left hover:bg-green-50"
                     >
@@ -707,7 +919,7 @@ export default function AdminDashboard() {
 
                     <button
                       onClick={() =>
-                        setActiveTab("analytics")
+                        selectTab("analytics")
                       }
                       className="flex w-full items-center gap-3 rounded-lg border border-gray-100 p-4 text-left hover:bg-green-50"
                     >
@@ -740,17 +952,156 @@ export default function AdminDashboard() {
               <div className="mt-6 rounded-xl border border-green-100 bg-green-50 p-5">
 
                 <p className="text-sm font-semibold text-[#087f3e]">
-                  Supabase is not connected yet
+                  Connected to Supabase
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-green-700">
-                  The dashboard is currently using browser
-                  storage for testing. Once Supabase is
-                  connected, student appointments,
-                  schedules, and meeting links can be
-                  synchronized between the student and
-                  administrator devices.
+                  Appointments, availability, and meeting links
+                  are stored in your Supabase Postgres database
+                  and shared across student and staff devices.
                 </p>
+
+              </div>
+
+            </div>
+
+          )}
+
+
+          {/* STUDENTS */}
+
+          {!showAppointment && activeTab === "students" && (
+
+            <div>
+
+              <PageHeader
+                title="Registered Students"
+                description="Students who created an account through the PsyCheck registration form."
+              />
+
+              <div className="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+
+                <input
+                  value={studentSearch}
+                  onChange={(e) =>
+                    setStudentSearch(e.target.value)
+                  }
+                  placeholder="Search name, email, student ID, or year level..."
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#087f3e]"
+                />
+
+              </div>
+
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+
+                <div className="overflow-x-auto">
+
+                  <table className="w-full min-w-[800px]">
+
+                    <thead className="border-b border-gray-100 bg-gray-50">
+
+                      <tr>
+
+                        <TableHead>
+                          Student
+                        </TableHead>
+
+                        <TableHead>
+                          Student ID
+                        </TableHead>
+
+                        <TableHead>
+                          Year Level
+                        </TableHead>
+
+                        <TableHead>
+                          Email
+                        </TableHead>
+
+                        <TableHead>
+                          Registered
+                        </TableHead>
+
+                      </tr>
+
+                    </thead>
+
+                    <tbody className="divide-y divide-gray-100">
+
+                      {filteredStudents.length === 0 && (
+
+                        <tr>
+
+                          <td
+                            colSpan={5}
+                            className="px-6 py-10 text-center text-sm text-gray-500"
+                          >
+                            No registered students yet. New student
+                            accounts from the login Register tab will
+                            appear here.
+                          </td>
+
+                        </tr>
+
+                      )}
+
+                      {filteredStudents.map((student) => (
+
+                        <tr
+                          key={student.id}
+                          className="hover:bg-gray-50"
+                        >
+
+                          <td className="px-6 py-5">
+
+                            <div className="flex items-center gap-3">
+
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-50 font-semibold text-[#087f3e]">
+                                {(student.full_name || student.email)
+                                  .charAt(0)
+                                  .toUpperCase()}
+                              </div>
+
+                              <p className="text-sm font-semibold">
+                                {student.full_name || "Unnamed student"}
+                              </p>
+
+                            </div>
+
+                          </td>
+
+                          <td className="px-6 py-5 text-sm text-gray-700">
+                            {student.student_id || "—"}
+                          </td>
+
+                          <td className="px-6 py-5 text-sm text-gray-700">
+                            {student.year_level || "—"}
+                          </td>
+
+                          <td className="px-6 py-5 text-sm text-gray-700">
+                            {student.email}
+                          </td>
+
+                          <td className="px-6 py-5 text-sm text-gray-500">
+                            {new Date(student.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}
+                          </td>
+
+                        </tr>
+
+                      ))}
+
+                    </tbody>
+
+                  </table>
+
+                </div>
 
               </div>
 
@@ -761,7 +1112,7 @@ export default function AdminDashboard() {
 
           {/* AVAILABILITY */}
 
-          {activeTab === "availability" && (
+          {!showAppointment && activeTab === "availability" && (
 
             <div>
 
@@ -814,28 +1165,44 @@ export default function AdminDashboard() {
 
                       <Field label="Start">
 
-                        <input
-                          type="time"
+                        <select
                           value={startTime}
                           onChange={(e) =>
                             setStartTime(e.target.value)
                           }
                           className="input"
-                        />
+                        >
+                          <option value="">
+                            Select time
+                          </option>
+                          {AVAILABILITY_TIME_OPTIONS.map((time) => (
+                            <option key={`start-${time}`} value={time}>
+                              {formatDisplayTime(time)}
+                            </option>
+                          ))}
+                        </select>
 
                       </Field>
 
 
                       <Field label="End">
 
-                        <input
-                          type="time"
+                        <select
                           value={endTime}
                           onChange={(e) =>
                             setEndTime(e.target.value)
                           }
                           className="input"
-                        />
+                        >
+                          <option value="">
+                            Select time
+                          </option>
+                          {AVAILABILITY_TIME_OPTIONS.map((time) => (
+                            <option key={`end-${time}`} value={time}>
+                              {formatDisplayTime(time)}
+                            </option>
+                          ))}
+                        </select>
 
                       </Field>
 
@@ -855,15 +1222,15 @@ export default function AdminDashboard() {
                       >
 
                         <option>
-                          Initial Consultation
-                        </option>
-
-                        <option>
                           Counseling Session
                         </option>
 
                         <option>
-                          Follow-up Session
+                          Referral
+                        </option>
+
+                        <option>
+                          Online Appointment
                         </option>
 
                       </select>
@@ -985,7 +1352,7 @@ export default function AdminDashboard() {
 
           {/* APPOINTMENTS */}
 
-          {activeTab === "appointments" && (
+          {!showAppointment && activeTab === "appointments" && (
 
             <div>
 
@@ -1150,7 +1517,7 @@ export default function AdminDashboard() {
 
           {/* ANALYTICS */}
 
-          {activeTab === "analytics" && (
+          {!showAppointment && activeTab === "analytics" && (
 
             <Analytics
               appointments={appointments}
@@ -1163,20 +1530,12 @@ export default function AdminDashboard() {
       </div>
 
 
-      {/* APPOINTMENT MODAL */}
-
-      {showAppointment && (
-
-        <AppointmentModal
-          appointment={showAppointment}
-          onClose={() =>
-            setShowAppointment(null)
-          }
-          onStatusChange={updateStatus}
-          onSaveMeetingLink={saveMeetingLink}
-        />
-
+      {message && (
+        <div className="fixed bottom-6 right-6 z-[60] max-w-sm rounded-xl border border-green-100 bg-white px-4 py-3 text-sm text-green-800 shadow-lg">
+          {message}
+        </div>
       )}
+
 
     </main>
   );
@@ -1206,22 +1565,20 @@ function Analytics({
     (a) => a.status === "Completed"
   ).length;
 
-  const initial = appointments.filter(
-    (a) =>
-      a.appointmentType ===
-      "Initial Consultation"
-  ).length;
-
   const counseling = appointments.filter(
     (a) =>
       a.appointmentType ===
       "Counseling Session"
   ).length;
 
-  const followup = appointments.filter(
+  const referral = appointments.filter(
+    (a) => a.appointmentType === "Referral"
+  ).length;
+
+  const onlineType = appointments.filter(
     (a) =>
       a.appointmentType ===
-      "Follow-up Session"
+      "Online Appointment"
   ).length;
 
   const firstYear = appointments.filter(
@@ -1292,20 +1649,20 @@ function Analytics({
         >
 
           <Progress
-            label="Initial Consultation"
-            value={initial}
-            total={total}
-          />
-
-          <Progress
             label="Counseling Session"
             value={counseling}
             total={total}
           />
 
           <Progress
-            label="Follow-up Session"
-            value={followup}
+            label="Referral"
+            value={referral}
+            total={total}
+          />
+
+          <Progress
+            label="Online Appointment"
+            value={onlineType}
             total={total}
           />
 
@@ -1450,10 +1807,10 @@ function Analytics({
 
 
 /* ============================================================
-   APPOINTMENT MODAL
+   APPOINTMENT DETAILS
 ============================================================ */
 
-function AppointmentModal({
+function AppointmentDetails({
   appointment,
   onClose,
   onStatusChange,
@@ -1473,102 +1830,138 @@ function AppointmentModal({
   const [meetingLink, setMeetingLink] =
     useState(appointment.meetingLink);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   return (
+    <div>
 
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-5">
+      <button
+        type="button"
+        onClick={onClose}
+        className="mb-6 text-sm font-medium text-[#087f3e] hover:underline"
+      >
+        ← Back
+      </button>
 
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-xl">
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
 
-        {/* HEADER */}
+        <div>
 
-        <div className="flex items-center justify-between border-b border-gray-100 p-6">
+          <h1 className="text-2xl font-semibold md:text-3xl">
+            Appointment Details
+          </h1>
 
-          <div>
+          <p className="mt-2 text-sm text-gray-500">
+            Manage this student's appointment.
+          </p>
 
-            <h2 className="font-semibold">
-              Appointment Details
-            </h2>
+        </div>
 
-            <p className="mt-1 text-xs text-gray-500">
-              Manage this student's appointment.
-            </p>
+        <StatusBadge status={appointment.status} />
+
+      </div>
+
+
+      <div className="grid gap-6 xl:grid-cols-3">
+
+        <div className="space-y-6 xl:col-span-2">
+
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+
+            <div className="flex items-center gap-4">
+
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-green-50 text-lg font-semibold text-[#087f3e]">
+                {appointment.studentName.charAt(0).toUpperCase()}
+              </div>
+
+              <div className="min-w-0">
+
+                <p className="text-xs text-gray-400">
+                  Student
+                </p>
+
+                <p className="mt-1 truncate text-lg font-semibold">
+                  {appointment.studentName}
+                </p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  {appointment.studentId}
+                </p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  {appointment.email}
+                </p>
+
+              </div>
+
+            </div>
 
           </div>
 
-          <button
-            onClick={onClose}
-            className="text-xl text-gray-400 hover:text-gray-700"
-          >
-            ×
-          </button>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+
+            <h2 className="font-semibold">
+              Schedule and request
+            </h2>
+
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+
+              <Detail
+                label="Date"
+                value={appointment.date}
+              />
+
+              <Detail
+                label="Time"
+                value={appointment.time}
+              />
+
+              <Detail
+                label="Year Level"
+                value={appointment.yearLevel}
+              />
+
+              <Detail
+                label="Mode"
+                value={appointment.mode}
+              />
+
+              <Detail
+                label="Appointment Type"
+                value={appointment.appointmentType}
+              />
+
+              {appointment.reason && (
+                <Detail
+                  label="Reason"
+                  value={appointment.reason}
+                />
+              )}
+
+            </div>
+
+            {appointment.message && (
+              <div className="mt-5 border-t border-gray-100 pt-5">
+                <p className="text-xs text-gray-400">
+                  Additional / Referral Details
+                </p>
+                <p className="mt-2 whitespace-pre-line text-sm font-medium text-gray-800">
+                  {appointment.message}
+                </p>
+              </div>
+            )}
+
+          </div>
 
         </div>
 
 
-        {/* CONTENT */}
+        <div className="space-y-6">
 
-        <div className="space-y-5 p-6">
-
-
-          {/* STUDENT */}
-
-          <div className="rounded-lg bg-gray-50 p-4">
-
-            <p className="text-xs text-gray-400">
-              Student
-            </p>
-
-            <p className="mt-1 font-semibold">
-              {appointment.studentName}
-            </p>
-
-            <p className="mt-1 text-xs text-gray-500">
-              {appointment.studentId}
-            </p>
-
-            <p className="mt-1 text-xs text-gray-500">
-              {appointment.email}
-            </p>
-
-          </div>
-
-
-          {/* DETAILS */}
-
-          <div className="grid grid-cols-2 gap-4">
-
-            <Detail
-              label="Date"
-              value={appointment.date}
-            />
-
-            <Detail
-              label="Time"
-              value={appointment.time}
-            />
-
-            <Detail
-              label="Year Level"
-              value={appointment.yearLevel}
-            />
-
-            <Detail
-              label="Mode"
-              value={appointment.mode}
-            />
-
-          </div>
-
-
-          <Detail
-            label="Appointment Type"
-            value={appointment.appointmentType}
-          />
-
-
-          {/* STATUS */}
-
-          <div>
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
 
             <label className="mb-2 block text-sm font-medium">
               Appointment Status
@@ -1592,14 +1985,16 @@ function AppointmentModal({
 
             </select>
 
+            <p className="mt-2 text-xs text-gray-500">
+              Setting status to Confirmed sends a no-reply approval email to the student.
+            </p>
+
           </div>
 
 
-          {/* VIDEO CALL */}
-
           {appointment.mode === "Online" && (
 
-            <div className="rounded-xl border border-blue-100 bg-blue-50 p-5">
+            <div className="rounded-xl border border-blue-100 bg-blue-50 p-6">
 
               <div className="flex items-center gap-3">
 
@@ -1633,9 +2028,10 @@ function AppointmentModal({
               />
 
 
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
 
                 <button
+                  type="button"
                   onClick={() =>
                     onSaveMeetingLink(
                       appointment.id,
@@ -1666,20 +2062,6 @@ function AppointmentModal({
             </div>
 
           )}
-
-        </div>
-
-
-        {/* FOOTER */}
-
-        <div className="flex justify-end border-t border-gray-100 p-6">
-
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
-          >
-            Close
-          </button>
 
         </div>
 
@@ -1963,6 +2345,25 @@ function DashboardIcon() {
 }
 
 
+function StudentsIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+
 function CalendarIcon() {
   return (
     <svg
@@ -2079,30 +2480,3 @@ function HomeIcon() {
   );
 }
 
-
-/* ============================================================
-   HELPERS
-============================================================ */
-
-function formatDate(value: string) {
-  return new Date(
-    `${value}T00:00:00`
-  ).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-
-function formatTime(value: string) {
-  const [hours, minutes] = value.split(":");
-
-  const hour = Number(hours);
-
-  const period = hour >= 12 ? "PM" : "AM";
-
-  const displayHour = hour % 12 || 12;
-
-  return `${displayHour}:${minutes} ${period}`;
-}
