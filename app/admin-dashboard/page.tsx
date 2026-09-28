@@ -1521,6 +1521,7 @@ export default function AdminDashboard() {
 
             <Analytics
               appointments={appointments}
+              studentsCount={students.length}
             />
 
           )}
@@ -1548,9 +1549,14 @@ export default function AdminDashboard() {
 
 function Analytics({
   appointments,
+  studentsCount,
 }: {
   appointments: Appointment[];
+  studentsCount: number;
 }) {
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
+
   const total = appointments.length;
 
   const online = appointments.filter(
@@ -1597,6 +1603,26 @@ function Analytics({
     (a) => a.yearLevel === "4th Year"
   ).length;
 
+  async function handleDownloadReport() {
+    setDownloadError("");
+    setDownloading(true);
+
+    try {
+      const { downloadAnalyticsPdfReport } = await import(
+        "@/lib/analytics-pdf"
+      );
+      await downloadAnalyticsPdfReport(appointments, studentsCount);
+    } catch (error) {
+      setDownloadError(
+        error instanceof Error
+          ? error.message
+          : "Unable to download the PDF report."
+      );
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
 
     <div>
@@ -1614,24 +1640,28 @@ function Analytics({
         <StatCard
           title="Total Appointments"
           value={total}
+          description="All student requests submitted through PsyCheck."
           icon={<CalendarIcon />}
         />
 
         <StatCard
           title="Online Appointments"
           value={online}
+          description="Requests booked as an online or video-call session."
           icon={<VideoIcon />}
         />
 
         <StatCard
           title="Pending"
           value={pending}
+          description="Requests still waiting for counselor review."
           icon={<ClockIcon />}
         />
 
         <StatCard
           title="Completed"
           value={completed}
+          description="Sessions that have already been finished."
           icon={<CheckIcon />}
         />
 
@@ -1646,6 +1676,7 @@ function Analytics({
         <AnalyticsCard
           title="Appointment Types"
           description="What services students requested"
+          caption="Share of requests by service: counseling, referral, or online appointment."
         >
 
           <Progress
@@ -1674,6 +1705,7 @@ function Analytics({
         <AnalyticsCard
           title="Students by Year Level"
           description="Distribution of students who booked"
+          caption="How booked appointments are spread across 1st through 4th year students."
         >
 
           <Progress
@@ -1708,6 +1740,7 @@ function Analytics({
         <AnalyticsCard
           title="Appointment Status"
           description="Current appointment outcomes"
+          caption="Where requests stand now: pending, confirmed, completed, or cancelled."
         >
 
           <Progress
@@ -1755,32 +1788,53 @@ function Analytics({
 
         {/* MODE */}
 
-        <AnalyticsCard
-          title="Appointment Mode"
-          description="How students prefer to attend"
-        >
+        <div className="space-y-4">
 
-          <Progress
-            label="Online / Video Call"
-            value={
-              appointments.filter(
-                (a) => a.mode === "Online"
-              ).length
-            }
-            total={total}
-          />
+          <AnalyticsCard
+            title="Appointment Mode"
+            description="How students prefer to attend"
+            caption="Whether students booked an online video call or an in-person session."
+          >
 
-          <Progress
-            label="In-person"
-            value={
-              appointments.filter(
-                (a) => a.mode === "In-person"
-              ).length
-            }
-            total={total}
-          />
+            <Progress
+              label="Online / Video Call"
+              value={
+                appointments.filter(
+                  (a) => a.mode === "Online"
+                ).length
+              }
+              total={total}
+            />
 
-        </AnalyticsCard>
+            <Progress
+              label="In-person"
+              value={
+                appointments.filter(
+                  (a) => a.mode === "In-person"
+                ).length
+              }
+              total={total}
+            />
+
+          </AnalyticsCard>
+
+          <button
+            type="button"
+            onClick={handleDownloadReport}
+            disabled={downloading}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#087f3e] px-4 py-3 text-sm font-medium text-white hover:bg-[#066b34] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            <DownloadIcon />
+            {downloading ? "Preparing PDF..." : "Download Reports"}
+          </button>
+
+          {downloadError && (
+            <p className="text-sm text-red-600">
+              {downloadError}
+            </p>
+          )}
+
+        </div>
 
       </div>
 
@@ -2128,10 +2182,12 @@ function NavButton({
 function StatCard({
   title,
   value,
+  description,
   icon,
 }: {
   title: string;
   value: number;
+  description?: string;
   icon: React.ReactNode;
 }) {
   return (
@@ -2157,6 +2213,12 @@ function StatCard({
         </div>
 
       </div>
+
+      {description && (
+        <p className="mt-3 text-xs leading-5 text-gray-500">
+          {description}
+        </p>
+      )}
 
     </div>
   );
@@ -2235,10 +2297,12 @@ function Detail({
 function AnalyticsCard({
   title,
   description,
+  caption,
   children,
 }: {
   title: string;
   description: string;
+  caption?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -2256,6 +2320,12 @@ function AnalyticsCard({
       <div className="mt-7 space-y-5">
         {children}
       </div>
+
+      {caption && (
+        <p className="mt-6 border-t border-gray-100 pt-4 text-xs leading-5 text-gray-500">
+          {caption}
+        </p>
+      )}
 
     </div>
   );
@@ -2409,6 +2479,22 @@ function ChartIcon() {
       strokeWidth="2"
     >
       <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+    </svg>
+  );
+}
+
+
+function DownloadIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
     </svg>
   );
 }
