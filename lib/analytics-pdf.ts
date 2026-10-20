@@ -69,8 +69,11 @@ export async function downloadAnalyticsPdfReport(
 
   const confirmed = countOf(appointments, (item) => item.status === "Confirmed");
   const pending = countOf(appointments, (item) => item.status === "Pending");
+  const rescheduled = countOf(
+    appointments,
+    (item) => item.status === "Rescheduled"
+  );
   const completed = countOf(appointments, (item) => item.status === "Completed");
-  const cancelled = countOf(appointments, (item) => item.status === "Cancelled");
   const online = countOf(appointments, (item) => item.mode === "Online");
 
   doc.setFillColor(...GREEN);
@@ -120,14 +123,14 @@ export async function downloadAnalyticsPdfReport(
         "Requests approved by a counselor or admin.",
       ],
       [
+        "Rescheduled",
+        String(rescheduled),
+        "Requests moved to a new follow-up schedule.",
+      ],
+      [
         "Completed",
         String(completed),
         "Sessions that have already been finished.",
-      ],
-      [
-        "Cancelled",
-        String(cancelled),
-        "Requests that were cancelled.",
       ],
     ],
     styles: { fontSize: 9, cellPadding: 6, textColor: TEXT },
@@ -149,29 +152,22 @@ export async function downloadAnalyticsPdfReport(
     rows: CountRow[];
   }[] = [
     {
-      title: "Appointment Types",
+      title: "Appointment Services",
       caption:
-        "Share of requests by service: counseling, referral, or online appointment.",
+        "Share of requests by service: face to face or online.",
       rows: [
         {
-          label: "Counseling Session",
+          label: "Face to Face",
           value: countOf(
             appointments,
-            (item) => item.appointmentType === "Counseling Session"
+            (item) => item.appointmentType === "Face to Face"
           ),
         },
         {
-          label: "Referral",
+          label: "Online",
           value: countOf(
             appointments,
-            (item) => item.appointmentType === "Referral"
-          ),
-        },
-        {
-          label: "Online Appointment",
-          value: countOf(
-            appointments,
-            (item) => item.appointmentType === "Online Appointment"
+            (item) => item.appointmentType === "Online"
           ),
         },
       ],
@@ -202,12 +198,12 @@ export async function downloadAnalyticsPdfReport(
     {
       title: "Appointment Status",
       caption:
-        "Where requests stand now: pending, confirmed, completed, or cancelled.",
+        "Where requests stand now: pending, confirmed, rescheduled, or completed.",
       rows: [
         { label: "Pending", value: pending },
         { label: "Confirmed", value: confirmed },
+        { label: "Rescheduled", value: rescheduled },
         { label: "Completed", value: completed },
-        { label: "Cancelled", value: cancelled },
       ],
     },
     {
@@ -268,7 +264,7 @@ export async function downloadAnalyticsPdfReport(
   autoTable(doc, {
     startY: listStart + 10,
     theme: "grid",
-    head: [["Student", "ID", "Type", "Date", "Time", "Mode", "Status"]],
+    head: [["Student", "ID", "Service", "Date", "Time", "Mode", "Status"]],
     body:
       appointments.length > 0
         ? appointments.map((appointment) => [

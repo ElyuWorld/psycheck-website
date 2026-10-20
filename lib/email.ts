@@ -79,7 +79,7 @@ function wrapEmail(title: string, bodyHtml: string) {
 function appointmentDetailsHtml(appointment: AppointmentEmailDetails) {
   return `
     <div style="margin:24px 0;padding:16px 18px;background:#f0fdf4;border-radius:12px;">
-      <p style="margin:0;font-size:14px;color:#065f46;"><strong>Type:</strong> ${escapeHtml(appointment.appointmentType)}</p>
+      <p style="margin:0;font-size:14px;color:#065f46;"><strong>Service:</strong> ${escapeHtml(appointment.appointmentType)}</p>
       <p style="margin:8px 0 0;font-size:14px;color:#065f46;"><strong>Date:</strong> ${escapeHtml(appointment.date)}</p>
       <p style="margin:8px 0 0;font-size:14px;color:#065f46;"><strong>Time:</strong> ${escapeHtml(appointment.time)}</p>
       <p style="margin:8px 0 0;font-size:14px;color:#065f46;"><strong>Mode:</strong> ${escapeHtml(appointment.mode)}</p>
@@ -146,7 +146,7 @@ export async function sendAppointmentApprovedEmail(
       `Hello ${appointment.studentName},`,
       "",
       "Your PsyCheck appointment request has been approved.",
-      `Type: ${appointment.appointmentType}`,
+      `Service: ${appointment.appointmentType}`,
       `Date: ${appointment.date}`,
       `Time: ${appointment.time}`,
       `Mode: ${appointment.mode}`,
@@ -187,11 +187,90 @@ export async function sendAppointmentRequestedEmail(
       `Hello ${appointment.studentName},`,
       "",
       "Your PsyCheck appointment request has been submitted. A counselor will review it.",
-      `Type: ${appointment.appointmentType}`,
+      `Service: ${appointment.appointmentType}`,
       `Date: ${appointment.date}`,
       `Time: ${appointment.time}`,
       `Mode: ${appointment.mode}`,
       "Status: Pending",
+      "",
+      "This is an automated no-reply message. Please do not reply to this email.",
+    ].join("\n"),
+  });
+}
+
+export type FollowUpScheduleEmail = {
+  studentName: string;
+  studentEmail: string;
+  date: string;
+  time: string;
+};
+
+export async function sendFollowUpScheduledEmail(
+  followUp: FollowUpScheduleEmail
+) {
+  const safeName = escapeHtml(followUp.studentName);
+
+  await sendNoReplyEmail({
+    to: followUp.studentEmail,
+    subject: "PsyCheck follow-up schedule",
+    html: wrapEmail(
+      "Follow-up schedule",
+      `
+        <p style="margin:0;font-size:15px;line-height:1.7;color:#374151;">
+          Hello ${safeName},
+        </p>
+        <p style="margin:12px 0 0;font-size:15px;line-height:1.7;color:#374151;">
+          Your counselor requested a follow-up session. Please see the
+          schedule below.
+        </p>
+        <div style="margin:24px 0;padding:16px 18px;background:#f0fdf4;border-radius:12px;">
+          <p style="margin:0;font-size:14px;color:#065f46;"><strong>Date:</strong> ${escapeHtml(followUp.date)}</p>
+          <p style="margin:8px 0 0;font-size:14px;color:#065f46;"><strong>Time:</strong> ${escapeHtml(followUp.time)}</p>
+        </div>
+      `
+    ),
+    text: [
+      `Hello ${followUp.studentName},`,
+      "",
+      "Your counselor requested a follow-up session.",
+      `Date: ${followUp.date}`,
+      `Time: ${followUp.time}`,
+      "",
+      "This is an automated no-reply message. Please do not reply to this email.",
+    ].join("\n"),
+  });
+}
+
+export async function sendSessionDoneEmail(options: {
+  studentName: string;
+  studentEmail: string;
+}) {
+  const safeName = escapeHtml(options.studentName);
+
+  await sendNoReplyEmail({
+    to: options.studentEmail,
+    subject: "PsyCheck session done",
+    html: wrapEmail(
+      "Session Done!",
+      `
+        <p style="margin:0;font-size:15px;line-height:1.7;color:#374151;">
+          Hello ${safeName},
+        </p>
+        <p style="margin:12px 0 0;font-size:15px;line-height:1.7;color:#374151;">
+          Your counselor marked this appointment as finished.
+        </p>
+        <div style="margin:24px 0;padding:16px 18px;background:#f0fdf4;border-radius:12px;text-align:center;">
+          <p style="margin:0;font-size:20px;font-weight:700;color:#087f3e;">
+            Session Done!
+          </p>
+        </div>
+      `
+    ),
+    text: [
+      `Hello ${options.studentName},`,
+      "",
+      "Your counselor marked this appointment as finished.",
+      "Session Done!",
       "",
       "This is an automated no-reply message. Please do not reply to this email.",
     ].join("\n"),

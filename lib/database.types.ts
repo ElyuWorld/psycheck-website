@@ -86,7 +86,12 @@ export type Database = {
           preferred_time: string;
           reason: string | null;
           message: string | null;
-          status: "Pending" | "Confirmed" | "Completed" | "Cancelled";
+          status:
+            | "Pending"
+            | "Confirmed"
+            | "Rescheduled"
+            | "Completed"
+            | "Cancelled";
           meeting_link: string | null;
           created_at: string;
         };
@@ -103,7 +108,12 @@ export type Database = {
           preferred_time: string;
           reason?: string | null;
           message?: string | null;
-          status?: "Pending" | "Confirmed" | "Completed" | "Cancelled";
+          status?:
+            | "Pending"
+            | "Confirmed"
+            | "Rescheduled"
+            | "Completed"
+            | "Cancelled";
           meeting_link?: string | null;
           created_at?: string;
         };
@@ -120,7 +130,12 @@ export type Database = {
           preferred_time?: string;
           reason?: string | null;
           message?: string | null;
-          status?: "Pending" | "Confirmed" | "Completed" | "Cancelled";
+          status?:
+            | "Pending"
+            | "Confirmed"
+            | "Rescheduled"
+            | "Completed"
+            | "Cancelled";
           meeting_link?: string | null;
           created_at?: string;
         };

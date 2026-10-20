@@ -3,8 +3,18 @@ export type UserRole = "student" | "counselor" | "admin";
 export type AppointmentStatus =
   | "Pending"
   | "Confirmed"
+  | "Rescheduled"
   | "Completed"
   | "Cancelled";
+
+export const STAFF_APPOINTMENT_STATUS_OPTIONS: {
+  value: Exclude<AppointmentStatus, "Pending" | "Cancelled">;
+  label: string;
+}[] = [
+  { value: "Confirmed", label: "Confirm" },
+  { value: "Rescheduled", label: "Reschedule" },
+  { value: "Completed", label: "Completed" },
+];
 
 export type AppointmentMode = "Online" | "In-person";
 
@@ -181,8 +191,12 @@ export function toAvailabilityView(row: Availability): AvailabilityView {
   };
 }
 
+export const APPOINTMENT_SERVICES = [
+  "Face to Face",
+  "Online",
+] as const;
+
 export const SERVICE_LABELS: Record<string, string> = {
-  counseling: "Counseling Session",
-  referral: "Referral",
-  online: "Online Appointment",
+  faceToFace: "Face to Face",
+  online: "Online",
 };

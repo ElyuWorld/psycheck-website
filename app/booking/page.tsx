@@ -33,6 +33,7 @@ export default function BookingPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [service, setService] = useState("");
+  const [reason, setReason] = useState("");
   const [referralName, setReferralName] = useState("");
   const [referralStudentNumber, setReferralStudentNumber] = useState("");
   const [referralGmail, setReferralGmail] = useState("");
@@ -129,6 +130,19 @@ export default function BookingPage() {
   const selectedSlot =
     slotsForSelectedDate.find((slot) => slot.id === selectedSlotId) || null;
 
+  const referralComplete =
+    service !== "referral" ||
+    Boolean(
+      referralName.trim() &&
+        referralStudentNumber.trim() &&
+        referralGmail.trim() &&
+        referralCause.trim()
+    );
+
+  const requiredComplete = Boolean(
+    service && selectedDate && selectedSlotId && reason && referralComplete
+  );
+
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -150,8 +164,8 @@ export default function BookingPage() {
     const form = e.currentTarget;
     const data = new FormData(form);
 
-    const serviceValue = String(data.get("service") || service);
-    const reason = String(data.get("reason") || "");
+    const serviceValue = String(data.get("service") || service).trim();
+    const reasonValue = String(data.get("reason") || reason).trim();
     const extraMessage = String(data.get("message") || "").trim();
     const referredName = String(data.get("referralName") || "").trim();
     const referredStudentNumber = String(
@@ -162,14 +176,26 @@ export default function BookingPage() {
       .toLowerCase();
     const referredCause = String(data.get("referralCause") || "").trim();
 
-    if (!serviceValue || !reason) {
-      setError("Please complete all required appointment fields.");
+    if (!serviceValue) {
+      setError("Please select an appointment service.");
+      setLoading(false);
+      return;
+    }
+
+    if (!selectedDate) {
+      setError("Please select an available date.");
       setLoading(false);
       return;
     }
 
     if (!selectedSlot) {
-      setError("Please choose an available date and time from the calendar.");
+      setError("Please select an available time.");
+      setLoading(false);
+      return;
+    }
+
+    if (!reasonValue) {
+      setError("Please select a reason for the appointment.");
       setLoading(false);
       return;
     }
@@ -239,7 +265,7 @@ export default function BookingPage() {
           mode: mode === "Online" ? "Online" : "In-person",
           preferred_date: date,
           preferred_time: timeLabel,
-          reason,
+          reason: reasonValue,
           message: combinedMessage || null,
           status: "Pending",
         })
@@ -306,6 +332,7 @@ export default function BookingPage() {
 
       form.reset();
       setService("");
+      setReason("");
       setReferralName("");
       setReferralStudentNumber("");
       setReferralGmail("");
@@ -440,7 +467,8 @@ export default function BookingPage() {
                   Appointment Details
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Choose your preferred appointment schedule.
+                  Choose your preferred appointment schedule. Fields marked *
+                  are required. Additional Reasons is optional.
                 </p>
               </div>
 
@@ -449,7 +477,8 @@ export default function BookingPage() {
                   htmlFor="service"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Type of Appointment
+                  Appointment Service
+                  <span className="ml-1 text-red-500">*</span>
                 </label>
                 <select
                   id="service"
@@ -471,11 +500,10 @@ export default function BookingPage() {
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
                 >
                   <option value="" disabled>
-                    Select appointment type
+                    Select appointment service
                   </option>
-                  <option value="counseling">Counseling Session</option>
-                  <option value="referral">Referral</option>
-                  <option value="online">Online Appointment</option>
+                  <option value="faceToFace">Face to Face</option>
+                  <option value="online">Online</option>
                 </select>
               </div>
 
@@ -497,12 +525,14 @@ export default function BookingPage() {
                         className="mb-2 block text-sm font-medium text-gray-700"
                       >
                         Name
+                        <span className="ml-1 text-red-500">*</span>
                       </label>
                       <input
                         id="referralName"
                         name="referralName"
                         type="text"
                         required
+                        minLength={1}
                         value={referralName}
                         onChange={(e) => setReferralName(e.target.value)}
                         placeholder="Enter the student's name"
@@ -516,12 +546,14 @@ export default function BookingPage() {
                         className="mb-2 block text-sm font-medium text-gray-700"
                       >
                         Student Number
+                        <span className="ml-1 text-red-500">*</span>
                       </label>
                       <input
                         id="referralStudentNumber"
                         name="referralStudentNumber"
                         type="text"
                         required
+                        minLength={1}
                         value={referralStudentNumber}
                         onChange={(e) =>
                           setReferralStudentNumber(e.target.value)
@@ -538,6 +570,7 @@ export default function BookingPage() {
                       className="mb-2 block text-sm font-medium text-gray-700"
                     >
                       Gmail
+                      <span className="ml-1 text-red-500">*</span>
                     </label>
                     <input
                       id="referralGmail"
@@ -562,11 +595,13 @@ export default function BookingPage() {
                       className="mb-2 block text-sm font-medium text-gray-700"
                     >
                       Cause of Referring
+                      <span className="ml-1 text-red-500">*</span>
                     </label>
                     <textarea
                       id="referralCause"
                       name="referralCause"
                       required
+                      minLength={1}
                       rows={3}
                       value={referralCause}
                       onChange={(e) => setReferralCause(e.target.value)}
@@ -580,11 +615,28 @@ export default function BookingPage() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
                   Available Schedule
+                  <span className="ml-1 text-red-500">*</span>
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
                   Choose a date and time posted by a counselor. Unavailable
                   dates cannot be selected.
                 </p>
+                <input
+                  className="sr-only"
+                  tabIndex={-1}
+                  aria-label="Preferred date"
+                  value={selectedDate}
+                  onChange={() => undefined}
+                  required
+                />
+                <input
+                  className="sr-only"
+                  tabIndex={-1}
+                  aria-label="Preferred time"
+                  value={selectedSlotId}
+                  onChange={() => undefined}
+                  required
+                />
               </div>
 
               {visibleSlots.length === 0 ? (
@@ -668,12 +720,14 @@ export default function BookingPage() {
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
                   Reason for Appointment
+                  <span className="ml-1 text-red-500">*</span>
                 </label>
                 <select
                   id="reason"
                   name="reason"
                   required
-                  defaultValue=""
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
                 >
                   <option value="" disabled>
@@ -694,7 +748,7 @@ export default function BookingPage() {
                   htmlFor="message"
                   className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Additional Information
+                  Additional Reasons
                   <span className="ml-1 font-normal text-gray-400">
                     (Optional)
                   </span>
@@ -703,7 +757,7 @@ export default function BookingPage() {
                   id="message"
                   name="message"
                   rows={4}
-                  placeholder="You may provide additional information about your appointment..."
+                  placeholder="You may add extra details here. This field is optional."
                   className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
                 />
               </div>
@@ -725,7 +779,7 @@ export default function BookingPage() {
               <div className="flex justify-end border-t border-gray-100 pt-6">
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !requiredComplete}
                   className="rounded-lg bg-[#087f3e] px-7 py-3 text-sm font-medium text-white transition hover:bg-[#066b34] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading ? "Submitting..." : "Request Appointment"}
@@ -796,13 +850,6 @@ function slotMatchesService(slot: Availability, service: string) {
   if (!service) return true;
 
   const label = SERVICE_LABELS[service];
-
-  if (service === "online") {
-    return (
-      slot.mode === "Online" || slot.appointment_type === "Online Appointment"
-    );
-  }
-
   return slot.appointment_type === label;
 }
 

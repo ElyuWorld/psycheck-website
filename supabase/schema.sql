@@ -41,7 +41,7 @@ create table if not exists public.appointments (
   reason text,
   message text,
   status text not null default 'Pending'
-    check (status in ('Pending', 'Confirmed', 'Completed', 'Cancelled')),
+    check (status in ('Pending', 'Confirmed', 'Rescheduled', 'Completed', 'Cancelled')),
   meeting_link text default '',
   created_at timestamptz not null default now()
 );

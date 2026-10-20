@@ -8,7 +8,9 @@ import { createClient } from "@/lib/supabase/client";
 import {
   toAppointmentView,
   toAvailabilityView,
+  APPOINTMENT_SERVICES,
   AVAILABILITY_TIME_OPTIONS,
+  STAFF_APPOINTMENT_STATUS_OPTIONS,
   clockToMinutes,
   formatDisplayTime,
   toClockValue,
@@ -115,7 +117,7 @@ export default function AdminDashboard() {
   const [endTime, setEndTime] = useState("");
 
   const [appointmentType, setAppointmentType] =
-    useState("Counseling Session");
+    useState("Face to Face");
 
   const [mode, setMode] =
     useState<AppointmentMode>("Online");
@@ -334,7 +336,11 @@ export default function AdminDashboard() {
         .eq("id", id);
 
       if (error) {
-        setMessage(error.message);
+        setMessage(
+          error.message.includes("appointments_status_check")
+            ? "Reschedule is not enabled in the database yet. In Supabase SQL Editor, run supabase/add-rescheduled-status.sql"
+            : error.message
+        );
         return;
       }
 
@@ -1209,7 +1215,7 @@ export default function AdminDashboard() {
                     </div>
 
 
-                    <Field label="Appointment Type">
+                    <Field label="Appointment Service">
 
                       <select
                         value={appointmentType}
@@ -1221,17 +1227,11 @@ export default function AdminDashboard() {
                         className="input"
                       >
 
-                        <option>
-                          Counseling Session
-                        </option>
-
-                        <option>
-                          Referral
-                        </option>
-
-                        <option>
-                          Online Appointment
-                        </option>
+                        {APPOINTMENT_SERVICES.map((service) => (
+                          <option key={service}>
+                            {service}
+                          </option>
+                        ))}
 
                       </select>
 
@@ -1371,7 +1371,7 @@ export default function AdminDashboard() {
                   onChange={(e) =>
                     setSearch(e.target.value)
                   }
-                  placeholder="Search student name, ID, or appointment type..."
+                  placeholder="Search student name, ID, or appointment service..."
                   className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#087f3e]"
                 />
 
@@ -1395,7 +1395,7 @@ export default function AdminDashboard() {
                         </TableHead>
 
                         <TableHead>
-                          Appointment
+                          Service
                         </TableHead>
 
                         <TableHead>
@@ -1571,20 +1571,12 @@ function Analytics({
     (a) => a.status === "Completed"
   ).length;
 
-  const counseling = appointments.filter(
-    (a) =>
-      a.appointmentType ===
-      "Counseling Session"
+  const faceToFace = appointments.filter(
+    (a) => a.appointmentType === "Face to Face"
   ).length;
 
-  const referral = appointments.filter(
-    (a) => a.appointmentType === "Referral"
-  ).length;
-
-  const onlineType = appointments.filter(
-    (a) =>
-      a.appointmentType ===
-      "Online Appointment"
+  const onlineService = appointments.filter(
+    (a) => a.appointmentType === "Online"
   ).length;
 
   const firstYear = appointments.filter(
@@ -1674,26 +1666,20 @@ function Analytics({
         {/* APPOINTMENT TYPES */}
 
         <AnalyticsCard
-          title="Appointment Types"
+          title="Appointment Services"
           description="What services students requested"
-          caption="Share of requests by service: counseling, referral, or online appointment."
+          caption="Share of requests by service: face to face or online."
         >
 
           <Progress
-            label="Counseling Session"
-            value={counseling}
+            label="Face to Face"
+            value={faceToFace}
             total={total}
           />
 
           <Progress
-            label="Referral"
-            value={referral}
-            total={total}
-          />
-
-          <Progress
-            label="Online Appointment"
-            value={onlineType}
+            label="Online"
+            value={onlineService}
             total={total}
           />
 
@@ -1740,7 +1726,7 @@ function Analytics({
         <AnalyticsCard
           title="Appointment Status"
           description="Current appointment outcomes"
-          caption="Where requests stand now: pending, confirmed, completed, or cancelled."
+          caption="Where requests stand now: pending, confirmed, rescheduled, or completed."
         >
 
           <Progress
@@ -1764,20 +1750,20 @@ function Analytics({
           />
 
           <Progress
-            label="Completed"
+            label="Rescheduled"
             value={
               appointments.filter(
-                (a) => a.status === "Completed"
+                (a) => a.status === "Rescheduled"
               ).length
             }
             total={total}
           />
 
           <Progress
-            label="Cancelled"
+            label="Completed"
             value={
               appointments.filter(
-                (a) => a.status === "Cancelled"
+                (a) => a.status === "Completed"
               ).length
             }
             total={total}
@@ -1883,10 +1869,78 @@ function AppointmentDetails({
 }) {
   const [meetingLink, setMeetingLink] =
     useState(appointment.meetingLink);
+  const [followUp, setFollowUp] = useState<"yes" | "no" | "">("");
+  const [followUpDate, setFollowUpDate] = useState("");
+  const [followUpTime, setFollowUpTime] = useState("");
+  const [followUpSending, setFollowUpSending] = useState(false);
+  const [followUpNotice, setFollowUpNotice] = useState("");
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  async function notifyFollowUp(needsFollowUp: boolean) {
+    setFollowUpNotice("");
+
+    if (needsFollowUp && (!followUpDate || !followUpTime)) {
+      setFollowUpNotice("Add a follow-up date and time first.");
+      return;
+    }
+
+    setFollowUpSending(true);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const response = await fetch("/api/notify-follow-up", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
+        body: JSON.stringify(
+          needsFollowUp
+            ? {
+                appointmentId: appointment.id,
+                followUp: true,
+                date: followUpDate,
+                time: followUpTime,
+              }
+            : {
+                appointmentId: appointment.id,
+                followUp: false,
+              }
+        ),
+      });
+
+      const payload = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        setFollowUpNotice(
+          payload.error || "The follow-up email could not be sent."
+        );
+        return;
+      }
+
+      if (needsFollowUp) {
+        setFollowUpNotice(
+          `A no-reply follow-up schedule was sent to ${appointment.email}.`
+        );
+      } else {
+        setFollowUpNotice(
+          `Session Done! A no-reply email was sent to ${appointment.email}.`
+        );
+        onStatusChange(appointment.id, "Completed");
+      }
+    } catch {
+      setFollowUpNotice("The follow-up email could not be sent.");
+    } finally {
+      setFollowUpSending(false);
+    }
+  }
 
   return (
     <div>
@@ -1984,7 +2038,7 @@ function AppointmentDetails({
               />
 
               <Detail
-                label="Appointment Type"
+                label="Appointment Service"
                 value={appointment.appointmentType}
               />
 
@@ -2015,6 +2069,138 @@ function AppointmentDetails({
 
         <div className="space-y-6">
 
+          <div className="rounded-xl border border-[#087f3e]/20 bg-white p-5 shadow-lg xl:sticky xl:top-24">
+
+            <p className="text-sm font-semibold text-[#064e3b]">
+              For follow up?
+            </p>
+
+            <p className="mt-1 text-xs text-gray-500">
+              Notify the student by email.
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+
+              <button
+                type="button"
+                onClick={() => {
+                  setFollowUp("yes");
+                  setFollowUpNotice("");
+                }}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium ${
+                  followUp === "yes"
+                    ? "border-[#087f3e] bg-[#087f3e] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:bg-green-50"
+                }`}
+              >
+                Yes
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setFollowUp("no");
+                  setFollowUpNotice("");
+                }}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium ${
+                  followUp === "no"
+                    ? "border-[#087f3e] bg-[#087f3e] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:bg-green-50"
+                }`}
+              >
+                No
+              </button>
+
+            </div>
+
+            {followUp === "yes" && (
+
+              <div className="mt-4 space-y-3">
+
+                <p className="text-xs text-gray-500">
+                  Email the student with this follow-up schedule.
+                </p>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                    Follow-up date
+                  </label>
+                  <input
+                    type="date"
+                    value={followUpDate}
+                    onChange={(e) => setFollowUpDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#087f3e]"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                    Follow-up time
+                  </label>
+                  <select
+                    value={followUpTime}
+                    onChange={(e) => setFollowUpTime(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#087f3e]"
+                  >
+                    <option value="" disabled>
+                      Select time
+                    </option>
+                    {AVAILABILITY_TIME_OPTIONS.map((time) => (
+                      <option key={time} value={time}>
+                        {formatDisplayTime(time)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => notifyFollowUp(true)}
+                  disabled={followUpSending}
+                  className="w-full rounded-lg bg-[#087f3e] px-3 py-2 text-xs font-medium text-white hover:bg-[#066b34] disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {followUpSending ? "Sending..." : "Notify by email"}
+                </button>
+
+              </div>
+
+            )}
+
+            {followUp === "no" && (
+
+              <div className="mt-4 space-y-3">
+
+                <div className="rounded-lg bg-green-50 px-3 py-3 text-center">
+                  <p className="text-sm font-semibold text-[#087f3e]">
+                    Session Done!
+                  </p>
+                  <p className="mt-1 text-xs text-green-700">
+                    Email the student that this session is finished.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => notifyFollowUp(false)}
+                  disabled={followUpSending}
+                  className="w-full rounded-lg bg-[#087f3e] px-3 py-2 text-xs font-medium text-white hover:bg-[#066b34] disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {followUpSending ? "Sending..." : "Notify by email"}
+                </button>
+
+              </div>
+
+            )}
+
+            {followUpNotice && (
+              <p className="mt-3 text-xs leading-5 text-gray-600">
+                {followUpNotice}
+              </p>
+            )}
+
+          </div>
+
+
           <div className="rounded-xl border border-gray-200 bg-white p-6">
 
             <label className="mb-2 block text-sm font-medium">
@@ -2022,7 +2208,13 @@ function AppointmentDetails({
             </label>
 
             <select
-              value={appointment.status}
+              value={
+                STAFF_APPOINTMENT_STATUS_OPTIONS.some(
+                  (option) => option.value === appointment.status
+                )
+                  ? appointment.status
+                  : ""
+              }
               onChange={(e) =>
                 onStatusChange(
                   appointment.id,
@@ -2032,15 +2224,25 @@ function AppointmentDetails({
               className="input"
             >
 
-              <option>Pending</option>
-              <option>Confirmed</option>
-              <option>Completed</option>
-              <option>Cancelled</option>
+              {!STAFF_APPOINTMENT_STATUS_OPTIONS.some(
+                (option) => option.value === appointment.status
+              ) && (
+                <option value="" disabled>
+                  Pending — choose an action
+                </option>
+              )}
+
+              {STAFF_APPOINTMENT_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
 
             </select>
 
             <p className="mt-2 text-xs text-gray-500">
-              Setting status to Confirmed sends a no-reply approval email to the student.
+              New student requests stay Pending. Staff can Confirm, Reschedule,
+              or mark Completed. Confirm sends a no-reply approval email.
             </p>
 
           </div>
@@ -2233,6 +2435,7 @@ function StatusBadge({
   const styles = {
     Pending: "bg-yellow-50 text-yellow-700",
     Confirmed: "bg-blue-50 text-blue-700",
+    Rescheduled: "bg-orange-50 text-orange-700",
     Completed: "bg-green-50 text-green-700",
     Cancelled: "bg-red-50 text-red-700",
   };
