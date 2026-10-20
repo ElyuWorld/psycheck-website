@@ -194,9 +194,11 @@ export function toAvailabilityView(row: Availability): AvailabilityView {
 export const APPOINTMENT_SERVICES = [
   "Face to Face",
   "Online",
+  "Referral",
 ] as const;
 
 export const SERVICE_LABELS: Record<string, string> = {
   faceToFace: "Face to Face",
   online: "Online",
+  referral: "Referral",
 };

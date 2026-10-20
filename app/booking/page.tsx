@@ -502,8 +502,11 @@ export default function BookingPage() {
                   <option value="" disabled>
                     Select appointment service
                   </option>
-                  <option value="faceToFace">Face to Face</option>
-                  <option value="online">Online</option>
+                  {Object.entries(SERVICE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
                 </select>
               </div>
 

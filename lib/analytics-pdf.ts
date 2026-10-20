@@ -154,7 +154,7 @@ export async function downloadAnalyticsPdfReport(
     {
       title: "Appointment Services",
       caption:
-        "Share of requests by service: face to face or online.",
+        "Share of requests by service: face to face, online, or referral.",
       rows: [
         {
           label: "Face to Face",
@@ -168,6 +168,13 @@ export async function downloadAnalyticsPdfReport(
           value: countOf(
             appointments,
             (item) => item.appointmentType === "Online"
+          ),
+        },
+        {
+          label: "Referral",
+          value: countOf(
+            appointments,
+            (item) => item.appointmentType === "Referral"
           ),
         },
       ],
