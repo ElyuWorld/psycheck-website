@@ -121,7 +121,7 @@ export default function AdminDashboard() {
     useState("Face to Face");
 
   const [mode, setMode] =
-    useState<AppointmentMode>("Online");
+    useState<AppointmentMode | "">("In-person");
 
   // ============================================================
   // LOGIN PROTECTION + SUPABASE DATA
@@ -247,6 +247,11 @@ export default function AdminDashboard() {
       return;
     }
 
+    if (appointmentType === "Referral" && !mode) {
+      setMessage("Please select an appointment mode.");
+      return;
+    }
+
     const startMinutes = clockToMinutes(startTime);
     const endMinutes = clockToMinutes(endTime);
 
@@ -276,7 +281,7 @@ export default function AdminDashboard() {
         start_time: toClockValue(startTime),
         end_time: toClockValue(endTime),
         appointment_type: appointmentType,
-        mode,
+        mode: resolvedAvailabilityMode(appointmentType, mode),
       });
 
       if (error) {
@@ -413,7 +418,7 @@ export default function AdminDashboard() {
     id: string,
     date: string,
     time: string
-  ) {
+  ): Promise<{ saved: boolean; emailed: boolean; error?: string }> {
     const displayTime = formatDisplayTime(time);
 
     try {
@@ -428,12 +433,11 @@ export default function AdminDashboard() {
         .eq("id", id);
 
       if (error) {
-        setMessage(
-          error.message.includes("appointments_status_check")
-            ? "Reschedule is not enabled in the database yet. In Supabase SQL Editor, run supabase/add-rescheduled-status.sql"
-            : error.message
-        );
-        return;
+        const errorMessage = error.message.includes("appointments_status_check")
+          ? "Reschedule is not enabled in the database yet. In Supabase SQL Editor, run supabase/add-rescheduled-status.sql"
+          : error.message;
+        setMessage(errorMessage);
+        return { saved: false, emailed: false, error: errorMessage };
       }
 
       const updated = appointments.map((appointment) =>
@@ -462,7 +466,7 @@ export default function AdminDashboard() {
           data: { session },
         } = await supabase.auth.getSession();
 
-        const response = await fetch("/api/notify-follow-up", {
+        const response = await fetch("/api/notify-reschedule", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -470,38 +474,43 @@ export default function AdminDashboard() {
           },
           body: JSON.stringify({
             appointmentId: id,
-            followUp: true,
-            date,
-            time,
           }),
         });
 
         const payload = (await response.json()) as { error?: string };
 
         if (!response.ok) {
-          setMessage(
+          const errorMessage =
             payload.error ||
-              "Appointment rescheduled, but the student email could not be sent."
-          );
-          return;
+            "Appointment rescheduled, but the student email could not be sent.";
+          setMessage(errorMessage);
+          setTimeout(() => {
+            setMessage("");
+          }, 4000);
+          return { saved: true, emailed: false, error: errorMessage };
         }
 
         setMessage(
           `Appointment rescheduled. A no-reply email was sent to ${appointment?.email || "the student"}.`
         );
+        setTimeout(() => {
+          setMessage("");
+        }, 4000);
+        return { saved: true, emailed: true };
       } catch {
-        setMessage(
-          "Appointment rescheduled, but the student email could not be sent."
-        );
+        const errorMessage =
+          "Appointment rescheduled, but the student email could not be sent.";
+        setMessage(errorMessage);
+        setTimeout(() => {
+          setMessage("");
+        }, 4000);
+        return { saved: true, emailed: false, error: errorMessage };
       }
-
-      setTimeout(() => {
-        setMessage("");
-      }, 4000);
     } catch (err) {
-      setMessage(
-        err instanceof Error ? err.message : "Failed to reschedule appointment."
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to reschedule appointment.";
+      setMessage(errorMessage);
+      return { saved: false, emailed: false, error: errorMessage };
     }
   }
 
@@ -1317,11 +1326,13 @@ export default function AdminDashboard() {
 
                       <select
                         value={appointmentType}
-                        onChange={(e) =>
-                          setAppointmentType(
-                            e.target.value
-                          )
-                        }
+                        onChange={(e) => {
+                          const nextService = e.target.value;
+                          setAppointmentType(nextService);
+                          setMode(
+                            inferredAvailabilityMode(nextService)
+                          );
+                        }}
                         className="input"
                       >
 
@@ -1339,22 +1350,41 @@ export default function AdminDashboard() {
                     <Field label="Appointment Mode">
 
                       <select
-                        value={mode}
+                        value={
+                          appointmentType === "Referral"
+                            ? mode
+                            : inferredAvailabilityMode(appointmentType)
+                        }
+                        disabled={appointmentType !== "Referral"}
                         onChange={(e) =>
                           setMode(
-                            e.target.value as AppointmentMode
+                            e.target.value as AppointmentMode | ""
                           )
                         }
-                        className="input"
+                        className={`input ${
+                          appointmentType !== "Referral"
+                            ? "cursor-not-allowed bg-gray-50 text-gray-600"
+                            : ""
+                        }`}
                       >
 
-                        <option value="Online">
-                          Online / Video Call
-                        </option>
+                        {appointmentType === "Referral" && (
+                          <option value="">
+                            Select appointment mode
+                          </option>
+                        )}
 
-                        <option value="In-person">
-                          In-person
-                        </option>
+                        {appointmentType !== "Online" && (
+                          <option value="In-person">
+                            Face to Face
+                          </option>
+                        )}
+
+                        {appointmentType !== "Face to Face" && (
+                          <option value="Online">
+                            Online
+                          </option>
+                        )}
 
                       </select>
 
@@ -1416,7 +1446,7 @@ export default function AdminDashboard() {
                             </span>
 
                             <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] text-blue-700">
-                              {slot.mode}
+                              {availabilityModeLabel(slot.mode)}
                             </span>
 
                           </div>
@@ -1993,7 +2023,7 @@ function AppointmentDetails({
     id: string,
     date: string,
     time: string
-  ) => void;
+  ) => Promise<{ saved: boolean; emailed: boolean; error?: string }>;
   onSaveMeetingLink: (
     id: string,
     link: string
@@ -2015,6 +2045,11 @@ function AppointmentDetails({
     toTimeOption(appointment.time)
   );
   const [rescheduleError, setRescheduleError] = useState("");
+  const [rescheduleSending, setRescheduleSending] = useState(false);
+  const [rescheduleNotice, setRescheduleNotice] = useState("");
+  const [rescheduleDone, setRescheduleDone] = useState(
+    appointment.status === "Rescheduled"
+  );
   const [followUp, setFollowUp] = useState<"yes" | "no" | "">("");
   const [followUpDate, setFollowUpDate] = useState("");
   const [followUpTime, setFollowUpTime] = useState("");
@@ -2028,6 +2063,7 @@ function AppointmentDetails({
   useEffect(() => {
     if (
       appointment.status === "Confirmed" ||
+      appointment.status === "Rescheduled" ||
       appointment.status === "Completed"
     ) {
       setStatusChoice(appointment.status);
@@ -2370,6 +2406,8 @@ function AppointmentDetails({
                 setRescheduleError("");
 
                 if (next === "Rescheduled") {
+                  setRescheduleDone(false);
+                  setRescheduleNotice("");
                   return;
                 }
 
@@ -2393,6 +2431,39 @@ function AppointmentDetails({
             </select>
 
             {statusChoice === "Rescheduled" && (
+              rescheduleDone ? (
+
+              <div className="mt-4 space-y-3 rounded-lg border border-green-100 bg-green-50 p-4">
+
+                <p className="text-sm font-medium text-green-800">
+                  Schedule saved
+                </p>
+
+                <p className="text-sm text-green-700">
+                  {appointment.date} at {appointment.time}
+                </p>
+
+                {rescheduleNotice && (
+                  <p className="text-xs leading-5 text-gray-700">
+                    {rescheduleNotice}
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRescheduleDone(false);
+                    setRescheduleNotice("");
+                    setRescheduleError("");
+                  }}
+                  className="w-full rounded-lg border border-green-200 bg-white px-3 py-2 text-xs font-medium text-green-800 hover:bg-green-100"
+                >
+                  Change schedule
+                </button>
+
+              </div>
+
+              ) : (
 
               <div className="mt-4 space-y-3 rounded-lg border border-orange-100 bg-orange-50 p-4">
 
@@ -2440,30 +2511,60 @@ function AppointmentDetails({
 
                 <button
                   type="button"
-                  onClick={() => {
+                  disabled={rescheduleSending}
+                  onClick={async () => {
                     if (!rescheduleDate || !rescheduleTime) {
                       setRescheduleError("Choose a new date and time.");
                       return;
                     }
 
-                    onReschedule(
-                      appointment.id,
-                      rescheduleDate,
-                      rescheduleTime
-                    );
+                    setRescheduleError("");
+                    setRescheduleNotice("");
+                    setRescheduleSending(true);
+
+                    try {
+                      const result = await onReschedule(
+                        appointment.id,
+                        rescheduleDate,
+                        rescheduleTime
+                      );
+
+                      if (!result.saved) {
+                        setRescheduleError(
+                          result.error || "Failed to save the new schedule."
+                        );
+                        return;
+                      }
+
+                      setRescheduleDone(true);
+                      setRescheduleNotice(
+                        result.emailed
+                          ? `A no-reply email was sent to ${appointment.email} with the new schedule.`
+                          : result.error ||
+                            "The schedule was saved, but the student email could not be sent."
+                      );
+                    } catch {
+                      setRescheduleError("Failed to save the new schedule.");
+                    } finally {
+                      setRescheduleSending(false);
+                    }
                   }}
-                  className="w-full rounded-lg bg-[#087f3e] px-3 py-2 text-xs font-medium text-white hover:bg-[#066b34]"
+                  className="w-full rounded-lg bg-[#087f3e] px-3 py-2 text-xs font-medium text-white hover:bg-[#066b34] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Save new schedule
+                  {rescheduleSending
+                    ? "Saving..."
+                    : "Save new schedule"}
                 </button>
 
               </div>
 
+              )
             )}
 
             <p className="mt-2 text-xs text-gray-500">
               New student requests stay Pending. Confirm, Reschedule, or mark
-              Completed. Reschedule asks when, then emails the student.
+              Completed. Saving a new schedule finishes the reschedule and
+              emails the student.
             </p>
 
           </div>
@@ -2671,6 +2772,25 @@ function StatusBadge({
   );
 }
 
+
+function inferredAvailabilityMode(service: string): AppointmentMode | "" {
+  if (service === "Online") return "Online";
+  if (service === "Face to Face") return "In-person";
+  return "";
+}
+
+function resolvedAvailabilityMode(
+  service: string,
+  selectedMode: AppointmentMode | ""
+): AppointmentMode {
+  if (service === "Online") return "Online";
+  if (service === "Face to Face") return "In-person";
+  return selectedMode === "Online" ? "Online" : "In-person";
+}
+
+function availabilityModeLabel(mode: AppointmentMode) {
+  return mode === "Online" ? "Online" : "Face to Face";
+}
 
 function Field({
   label,

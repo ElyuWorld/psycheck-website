@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   SERVICE_LABELS,
   formatDisplayTime,
+  type AppointmentMode,
   type Availability,
 } from "@/lib/types";
 import {
@@ -38,6 +39,9 @@ export default function BookingPage() {
   const [referralStudentNumber, setReferralStudentNumber] = useState("");
   const [referralGmail, setReferralGmail] = useState("");
   const [referralCause, setReferralCause] = useState("");
+  const [referralSession, setReferralSession] = useState<
+    "" | "Face to Face" | "Online"
+  >("");
   const [slots, setSlots] = useState<Availability[]>([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlotId, setSelectedSlotId] = useState("");
@@ -118,8 +122,11 @@ export default function BookingPage() {
   }, [router]);
 
   const visibleSlots = useMemo(
-    () => slots.filter((slot) => slotMatchesService(slot, service)),
-    [slots, service]
+    () =>
+      slots.filter((slot) =>
+        slotMatchesService(slot, service, referralSession)
+      ),
+    [slots, service, referralSession]
   );
 
   const slotsForSelectedDate = useMemo(
@@ -136,7 +143,8 @@ export default function BookingPage() {
       referralName.trim() &&
         referralStudentNumber.trim() &&
         referralGmail.trim() &&
-        referralCause.trim()
+        referralCause.trim() &&
+        referralSession
     );
 
   const requiredComplete = Boolean(
@@ -175,6 +183,9 @@ export default function BookingPage() {
       .trim()
       .toLowerCase();
     const referredCause = String(data.get("referralCause") || "").trim();
+    const referredSession = String(
+      data.get("referralSession") || referralSession
+    ).trim();
 
     if (!serviceValue) {
       setError("Please select an appointment service.");
@@ -205,7 +216,8 @@ export default function BookingPage() {
         !referredName ||
         !referredStudentNumber ||
         !referredGmail ||
-        !referredCause
+        !referredCause ||
+        (referredSession !== "Face to Face" && referredSession !== "Online")
       ) {
         setError("Please complete all referral fields.");
         setLoading(false);
@@ -222,7 +234,14 @@ export default function BookingPage() {
     }
 
     const appointmentType = SERVICE_LABELS[serviceValue] || serviceValue;
-    const mode = selectedSlot.mode;
+    const mode: AppointmentMode =
+      serviceValue === "referral"
+        ? referredSession === "Online"
+          ? "Online"
+          : "In-person"
+        : selectedSlot.mode === "Online"
+          ? "Online"
+          : "In-person";
     const date = selectedSlot.date;
     const timeLabel = formatDisplayTime(selectedSlot.start_time);
 
@@ -233,6 +252,7 @@ export default function BookingPage() {
             `Name: ${referredName}`,
             `Student number: ${referredStudentNumber}`,
             `Gmail: ${referredGmail}`,
+            `Session: ${referredSession}`,
             `Cause of referring: ${referredCause}`,
           ].join("\n")
         : "";
@@ -262,7 +282,7 @@ export default function BookingPage() {
           email: student.email,
           year_level: student.yearLevel || null,
           appointment_type: appointmentType,
-          mode: mode === "Online" ? "Online" : "In-person",
+          mode,
           preferred_date: date,
           preferred_time: timeLabel,
           reason: reasonValue,
@@ -337,6 +357,7 @@ export default function BookingPage() {
       setReferralStudentNumber("");
       setReferralGmail("");
       setReferralCause("");
+      setReferralSession("");
       setSelectedDate("");
       setSelectedSlotId("");
       setShowAlert(true);
@@ -495,6 +516,7 @@ export default function BookingPage() {
                       setReferralStudentNumber("");
                       setReferralGmail("");
                       setReferralCause("");
+                      setReferralSession("");
                     }
                   }}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
@@ -569,10 +591,46 @@ export default function BookingPage() {
 
                   <div>
                     <label
+                      htmlFor="referralSession"
+                      className="mb-2 block text-sm font-medium text-gray-700"
+                    >
+                      Session
+                      <span className="ml-1 text-red-500">*</span>
+                    </label>
+                    <select
+                      id="referralSession"
+                      name="referralSession"
+                      required
+                      value={referralSession}
+                      onChange={(e) => {
+                        const next = e.target.value as
+                          | ""
+                          | "Face to Face"
+                          | "Online";
+                        setReferralSession(next);
+                        setSelectedDate("");
+                        setSelectedSlotId("");
+                      }}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
+                    >
+                      <option value="" disabled>
+                        Select session
+                      </option>
+                      <option value="Face to Face">Face to Face</option>
+                      <option value="Online">Online</option>
+                    </select>
+                    <p className="mt-1.5 text-xs text-gray-500">
+                      Choose whether this referral will be face to face or
+                      online.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
                       htmlFor="referralGmail"
                       className="mb-2 block text-sm font-medium text-gray-700"
                     >
-                      Gmail
+                      Gmail of the person being referred
                       <span className="ml-1 text-red-500">*</span>
                     </label>
                     <input
@@ -849,11 +907,23 @@ export default function BookingPage() {
   );
 }
 
-function slotMatchesService(slot: Availability, service: string) {
+function slotMatchesService(
+  slot: Availability,
+  service: string,
+  referralSession: "" | "Face to Face" | "Online" = ""
+) {
   if (!service) return true;
 
   const label = SERVICE_LABELS[service];
-  return slot.appointment_type === label;
+  if (slot.appointment_type !== label) return false;
+
+  if (service === "referral" && referralSession) {
+    const expectedMode: AppointmentMode =
+      referralSession === "Online" ? "Online" : "In-person";
+    return slot.mode === expectedMode;
+  }
+
+  return true;
 }
 
 function BookingCalendar({

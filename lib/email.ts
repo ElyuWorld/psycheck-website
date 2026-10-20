@@ -114,6 +114,55 @@ async function sendNoReplyEmail(options: {
   });
 }
 
+export async function sendAppointmentRescheduledEmail(
+  appointment: ApprovedAppointmentEmail
+) {
+  const safeName = escapeHtml(appointment.studentName);
+  const meetingBlock = appointment.meetingLink
+    ? `<p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#374151;">
+        Join your online session here:<br />
+        <a href="${escapeHtml(appointment.meetingLink)}" style="color:#087f3e;">${escapeHtml(appointment.meetingLink)}</a>
+      </p>`
+    : "";
+
+  await sendNoReplyEmail({
+    to: appointment.studentEmail,
+    subject: "PsyCheck appointment rescheduled",
+    html: wrapEmail(
+      "Your appointment was rescheduled",
+      `
+        <p style="margin:0;font-size:15px;line-height:1.7;color:#374151;">
+          Hello ${safeName},
+        </p>
+        <p style="margin:12px 0 0;font-size:15px;line-height:1.7;color:#374151;">
+          Your counselor saved a new schedule for your psychosocial support
+          appointment. Please see the updated details below.
+        </p>
+        ${appointmentDetailsHtml(appointment)}
+        ${meetingBlock}
+        <p style="margin:0;font-size:14px;line-height:1.7;color:#065f46;">
+          <strong>Status:</strong> Rescheduled
+        </p>
+      `
+    ),
+    text: [
+      `Hello ${appointment.studentName},`,
+      "",
+      "Your counselor saved a new schedule for your PsyCheck appointment.",
+      `Service: ${appointment.appointmentType}`,
+      `Date: ${appointment.date}`,
+      `Time: ${appointment.time}`,
+      `Mode: ${appointment.mode}`,
+      "Status: Rescheduled",
+      appointment.meetingLink ? `Meeting link: ${appointment.meetingLink}` : "",
+      "",
+      "This is an automated no-reply message. Please do not reply to this email.",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  });
+}
+
 export async function sendAppointmentApprovedEmail(
   appointment: ApprovedAppointmentEmail
 ) {
