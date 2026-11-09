@@ -1649,7 +1649,6 @@ export default function AdminDashboard() {
 
             <Analytics
               appointments={appointments}
-              studentsCount={students.length}
             />
 
           )}
@@ -1677,14 +1676,9 @@ export default function AdminDashboard() {
 
 function Analytics({
   appointments,
-  studentsCount,
 }: {
   appointments: Appointment[];
-  studentsCount: number;
 }) {
-  const [downloading, setDownloading] = useState(false);
-  const [downloadError, setDownloadError] = useState("");
-
   const total = appointments.length;
 
   const online = appointments.filter(
@@ -1726,26 +1720,6 @@ function Analytics({
   const fourthYear = appointments.filter(
     (a) => a.yearLevel === "4th Year"
   ).length;
-
-  async function handleDownloadReport() {
-    setDownloadError("");
-    setDownloading(true);
-
-    try {
-      const { downloadAnalyticsPdfReport } = await import(
-        "@/lib/analytics-pdf"
-      );
-      await downloadAnalyticsPdfReport(appointments, studentsCount);
-    } catch (error) {
-      setDownloadError(
-        error instanceof Error
-          ? error.message
-          : "Unable to download the PDF report."
-      );
-    } finally {
-      setDownloading(false);
-    }
-  }
 
   return (
 
@@ -1942,21 +1916,15 @@ function Analytics({
 
           </AnalyticsCard>
 
-          <button
-            type="button"
-            onClick={handleDownloadReport}
-            disabled={downloading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#087f3e] px-4 py-3 text-sm font-medium text-white hover:bg-[#066b34] disabled:cursor-not-allowed disabled:opacity-70"
+          <a
+            href="https://docs.google.com/spreadsheets/d/1BkMgVAJr6y3Lf6z4akrBckGmgRE1CL_FGaOIRAb28W4/edit?gid=0#gid=0"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#087f3e] px-4 py-3 text-sm font-medium text-white hover:bg-[#066b34]"
           >
-            <DownloadIcon />
-            {downloading ? "Preparing PDF..." : "Download Reports"}
-          </button>
-
-          {downloadError && (
-            <p className="text-sm text-red-600">
-              {downloadError}
-            </p>
-          )}
+            <ExternalLinkIcon />
+            Open Reports
+          </a>
 
         </div>
 
@@ -3028,7 +2996,7 @@ function ChartIcon() {
 }
 
 
-function DownloadIcon() {
+function ExternalLinkIcon() {
   return (
     <svg
       width="16"
@@ -3038,7 +3006,7 @@ function DownloadIcon() {
       stroke="currentColor"
       strokeWidth="2"
     >
-      <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+      <path d="M14 4h6v6M20 4l-9 9M10 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4" />
     </svg>
   );
 }
