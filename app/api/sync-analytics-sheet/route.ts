@@ -135,24 +135,10 @@ export async function POST(request: Request) {
 }
 
 async function postToAppsScript(url: string, payload: unknown) {
-  const init: RequestInit = {
+  return fetch(url, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(payload),
-    redirect: "manual",
-  };
-
-  let response = await fetch(url, init);
-
-  if (response.status >= 300 && response.status < 400) {
-    const location = response.headers.get("location");
-    if (location) {
-      response = await fetch(location, {
-        ...init,
-        redirect: "follow",
-      });
-    }
-  }
-
-  return response;
+    redirect: "follow",
+  });
 }
