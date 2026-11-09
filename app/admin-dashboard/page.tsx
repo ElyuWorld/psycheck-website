@@ -21,6 +21,8 @@ import {
   type AvailabilityView,
   type Profile,
 } from "@/lib/types";
+import { isKeptAppointment, isKeptStudent } from "@/lib/kept-records";
+import { PSYCHECK_RECORDS_SHEET_URL } from "@/lib/analytics-report";
 
 type Tab =
   | "dashboard"
@@ -32,52 +34,6 @@ type Tab =
 type Appointment = AppointmentView;
 type Availability = AvailabilityView;
 type Student = Profile;
-
-const DEMO_STUDENT_EMAILS = new Set([
-  "juan@example.com",
-  "maria@example.com",
-  "john@example.com",
-  "angela@example.com",
-]);
-
-const DEMO_STUDENT_NAMES = new Set([
-  "juan dela cruz",
-  "maria santos",
-  "john reyes",
-  "angela garcia",
-]);
-
-function isKeptStudent(student: Profile) {
-  const name = (student.full_name || "").trim();
-  const email = (student.email || "").toLowerCase();
-
-  if (name.toLowerCase() === "student 1") return true;
-  if (!name) return false;
-  if (DEMO_STUDENT_EMAILS.has(email)) return false;
-  if (DEMO_STUDENT_NAMES.has(name.toLowerCase())) return false;
-  if (!student.student_id?.trim()) return false;
-
-  return true;
-}
-
-function isKeptAppointment(
-  row: { student_user_id: string | null; student_name: string; email: string },
-  keptStudents: Profile[]
-) {
-  const email = (row.email || "").toLowerCase();
-  const name = (row.student_name || "").trim().toLowerCase();
-
-  if (DEMO_STUDENT_EMAILS.has(email)) return false;
-  if (DEMO_STUDENT_NAMES.has(name)) return false;
-  if (name === "student 1") return true;
-
-  return keptStudents.some(
-    (student) =>
-      student.id === row.student_user_id ||
-      student.email.toLowerCase() === email ||
-      (student.full_name || "").trim().toLowerCase() === name
-  );
-}
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -1649,6 +1605,7 @@ export default function AdminDashboard() {
 
             <Analytics
               appointments={appointments}
+              studentsCount={students.length}
             />
 
           )}
@@ -1676,9 +1633,14 @@ export default function AdminDashboard() {
 
 function Analytics({
   appointments,
+  studentsCount,
 }: {
   appointments: Appointment[];
+  studentsCount: number;
 }) {
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState("");
+
   const total = appointments.length;
 
   const online = appointments.filter(
@@ -1720,6 +1682,44 @@ function Analytics({
   const fourthYear = appointments.filter(
     (a) => a.yearLevel === "4th Year"
   ).length;
+
+  async function handleOpenReports() {
+    setSyncError("");
+    setSyncing(true);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const response = await fetch("/api/sync-analytics-sheet", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
+      });
+
+      const payload = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        setSyncError(
+          payload.error || "The Google Sheet could not be updated."
+        );
+        return;
+      }
+
+      window.open(PSYCHECK_RECORDS_SHEET_URL, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      setSyncError(
+        error instanceof Error
+          ? error.message
+          : "The Google Sheet could not be updated."
+      );
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   return (
 
@@ -1916,15 +1916,21 @@ function Analytics({
 
           </AnalyticsCard>
 
-          <a
-            href="https://docs.google.com/spreadsheets/d/1BkMgVAJr6y3Lf6z4akrBckGmgRE1CL_FGaOIRAb28W4/edit?gid=0#gid=0"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#087f3e] px-4 py-3 text-sm font-medium text-white hover:bg-[#066b34]"
+          <button
+            type="button"
+            onClick={handleOpenReports}
+            disabled={syncing}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#087f3e] px-4 py-3 text-sm font-medium text-white hover:bg-[#066b34] disabled:cursor-not-allowed disabled:opacity-70"
           >
             <ExternalLinkIcon />
-            Open Reports
-          </a>
+            {syncing ? "Updating Google Sheet..." : "Open Reports"}
+          </button>
+
+          {syncError && (
+            <p className="text-sm text-red-600">
+              {syncError}
+            </p>
+          )}
 
         </div>
 
