@@ -97,6 +97,21 @@ export async function POST(request: Request) {
   const response = await postToAppsScript(webhookUrl, payload);
 
   const raw = await response.text();
+  const looksLikeLogin =
+    response.status === 401 ||
+    response.status === 403 ||
+    /accounts\.google\.com|Sign in/i.test(raw);
+
+  if (looksLikeLogin) {
+    return Response.json(
+      {
+        error:
+          "The Apps Script web app is private. Create a new deployment: Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone (not Anyone with a Google account). Then paste the new /exec URL into GOOGLE_SHEETS_WEBHOOK_URL.",
+      },
+      { status: 502 }
+    );
+  }
+
   let body: { ok?: boolean; error?: string } = {};
 
   try {
@@ -105,7 +120,7 @@ export async function POST(request: Request) {
     body = {};
   }
 
-  if (!response.ok || body.ok === false) {
+  if (!response.ok || body.ok === false || body.ok !== true) {
     return Response.json(
       {
         error:
@@ -122,7 +137,7 @@ export async function POST(request: Request) {
 async function postToAppsScript(url: string, payload: unknown) {
   const init: RequestInit = {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(payload),
     redirect: "manual",
   };
