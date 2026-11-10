@@ -49,7 +49,7 @@ export default function Home() {
             : "border-b border-transparent bg-transparent"
         }`}
       >
-        <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+        <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:h-20 md:px-6">
           <Link href="/" className="flex items-center gap-3">
             <Image
               src="/logo.png"
@@ -57,7 +57,7 @@ export default function Home() {
               width={56}
               height={56}
               priority
-              className="object-contain"
+              className="h-11 w-11 object-contain md:h-14 md:w-14"
             />
             <span className="text-xl font-semibold tracking-tight text-[#087f3e]">
               PsyCheck
@@ -120,32 +120,31 @@ export default function Home() {
         </nav>
 
         {menuOpen && (
-          <div className="border-t border-emerald-50 bg-white px-6 py-5 md:hidden">
-            <div className="flex flex-col gap-4">
+          <div className="border-t border-emerald-50 bg-white px-4 py-5 md:hidden">
+            <div className="flex flex-col gap-2">
               <a
                 href="#top"
                 onClick={() => setMenuOpen(false)}
-                className="text-sm font-medium text-gray-700"
+                className="rounded-lg px-2 py-3 text-sm font-medium text-gray-700"
               >
                 Home
               </a>
               <a
                 href="#how-it-works"
                 onClick={() => setMenuOpen(false)}
-                className="text-sm font-medium text-gray-700"
+                className="rounded-lg px-2 py-3 text-sm font-medium text-gray-700"
               >
                 How it works
               </a>
               <a
                 href="#about"
                 onClick={() => setMenuOpen(false)}
-                className="text-sm font-medium text-gray-700"
+                className="rounded-lg px-2 py-3 text-sm font-medium text-gray-700"
               >
                 About
               </a>
               <Link
                 href="/login"
-                onClick={() => setMenuOpen(false)}
                 className="rounded-xl bg-[#087f3e] px-5 py-3 text-center text-sm font-medium text-white"
               >
                 Log In
@@ -163,13 +162,13 @@ export default function Home() {
           <div className="home-float-delayed absolute -right-16 bottom-10 h-72 w-72 rounded-full bg-teal-200/25 blur-3xl" />
         </div>
 
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-10 md:grid-cols-2 md:gap-16 md:pb-28 md:pt-16">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-16 pt-8 md:grid-cols-2 md:gap-16 md:px-6 md:pb-28 md:pt-16">
           <div className="home-fade-up">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#087f3e]">
               PsyCheck
             </p>
 
-            <h1 className="mt-4 max-w-xl text-4xl font-semibold leading-tight tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
+            <h1 className="mt-4 max-w-xl text-3xl font-semibold leading-tight tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
               Mental health matters, You matter.
             </h1>
 
@@ -178,7 +177,7 @@ export default function Home() {
               psychosocial support in a simple, private, and accessible way.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 href="/login"
                 className="inline-flex items-center justify-center rounded-xl bg-[#087f3e] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#066b34] hover:shadow-lg hover:shadow-emerald-200"
@@ -213,7 +212,7 @@ export default function Home() {
       {/* How it works */}
       <section
         id="how-it-works"
-        className="scroll-mt-24 border-t border-emerald-100/70 bg-white px-6 py-20"
+        className="scroll-mt-24 border-t border-emerald-100/70 bg-white px-4 py-16 md:px-6 md:py-20"
       >
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
@@ -248,7 +247,7 @@ export default function Home() {
       {/* About */}
       <section
         id="about"
-        className="scroll-mt-24 border-t border-emerald-100/70 bg-[#f7faf8] px-6 py-20"
+        className="scroll-mt-24 border-t border-emerald-100/70 bg-[#f7faf8] px-4 py-16 md:px-6 md:py-20"
       >
         <div className="mx-auto grid max-w-7xl items-start gap-12 md:grid-cols-[1.1fr_0.9fr] md:gap-16">
           <div>
@@ -303,8 +302,8 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="px-6 py-16 md:py-20">
-        <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#087f3e] via-[#0a9a4d] to-[#14b8a6] px-8 py-14 text-white shadow-xl shadow-emerald-200/40 md:px-14">
+      <section className="px-4 py-14 md:px-6 md:py-20">
+        <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#087f3e] via-[#0a9a4d] to-[#14b8a6] px-5 py-10 text-white shadow-xl shadow-emerald-200/40 md:px-14 md:py-14">
           <div className="max-w-2xl">
             <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
               Ready when you are
@@ -313,16 +312,16 @@ export default function Home() {
               Create an account or log in to request an appointment. Your
               well-being matters — and support is one step away.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href="/login"
-                className="inline-flex rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-[#087f3e] transition hover:bg-emerald-50"
+                className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-[#087f3e] transition hover:bg-emerald-50"
               >
                 Get started
               </Link>
               <a
                 href="#about"
-                className="inline-flex rounded-xl border border-white/40 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex items-center justify-center rounded-xl border border-white/40 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
               >
                 Learn more
               </a>
@@ -331,7 +330,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t border-emerald-100 bg-white px-6 py-10">
+      <footer className="border-t border-emerald-100 bg-white px-4 py-10 md:px-6">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
           <div className="flex items-center gap-3">
             <Image

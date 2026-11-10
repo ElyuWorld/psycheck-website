@@ -47,6 +47,15 @@ a {
   box-shadow: 0 0 0 2px rgba(8, 127, 62, 0.12);
 }
 
+@media (max-width: 767px) {
+  .input,
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 @keyframes home-fade-up {
   from {
     opacity: 0;

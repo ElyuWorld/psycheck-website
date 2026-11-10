@@ -22,7 +22,7 @@ const ROLE_MAP: Record<RoleLabel, UserRole> = {
 };
 
 const inputClass =
-  "w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-[#10B981] focus:bg-white focus:ring-2 focus:ring-[#A7F3D0]";
+  "w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-base outline-none transition focus:border-[#10B981] focus:bg-white focus:ring-2 focus:ring-[#A7F3D0]";
 
 export default function Login() {
   const router = useRouter();
@@ -233,8 +233,8 @@ export default function Login() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#F0FDF4] px-4 py-12">
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
+    <main className="flex min-h-screen items-center justify-center overflow-x-hidden bg-[#F0FDF4] px-4 py-8 sm:py-12">
+      <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-xl sm:p-8">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#D1FAE5]">
             <Image
@@ -247,7 +247,7 @@ export default function Login() {
             />
           </div>
 
-          <h1 className="text-3xl font-bold text-[#064E3B]">
+          <h1 className="text-2xl font-bold text-[#064E3B] sm:text-3xl">
             Welcome to PsyCheck
           </h1>
 
@@ -298,7 +298,7 @@ export default function Login() {
                         setRole(item);
                         setError("");
                       }}
-                      className={`rounded-xl border px-3 py-3 text-sm font-medium transition ${
+                      className={`rounded-xl border px-2 py-3 text-xs font-medium transition sm:px-3 sm:text-sm ${
                         role === item
                           ? "border-[#10B981] bg-[#10B981] text-white shadow-md"
                           : "border-[#D1FAE5] bg-white text-[#047857] hover:bg-[#ECFDF5]"

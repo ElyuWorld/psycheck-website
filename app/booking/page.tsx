@@ -379,24 +379,24 @@ export default function BookingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen overflow-x-hidden bg-white">
       <header className="w-full border-b border-gray-100 bg-white">
-        <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center">
+        <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 md:h-20 md:px-6">
+          <Link href="/" className="flex min-w-0 items-center">
             <Image
               src="/logo.png"
               alt="PsyCheck Logo"
               width={55}
               height={55}
               priority
-              className="object-contain"
+              className="h-10 w-10 object-contain md:h-[55px] md:w-[55px]"
             />
-            <div className="ml-3">
+            <div className="ml-3 min-w-0">
               <h1 className="text-lg font-semibold text-[#087f3e]">PsyCheck</h1>
             </div>
           </Link>
 
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             {student && (
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-semibold text-gray-900">
@@ -407,21 +407,21 @@ export default function BookingPage() {
             )}
 
             {student && (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#087f3e] text-sm font-semibold text-white">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#087f3e] text-sm font-semibold text-white md:h-10 md:w-10">
                 {student.fullName.charAt(0).toUpperCase()}
               </div>
             )}
 
             <Link
               href="/"
-              className="rounded-lg border border-[#087f3e] px-4 py-2.5 text-sm font-medium text-[#087f3e] transition hover:bg-green-50"
+              className="rounded-lg border border-[#087f3e] px-3 py-2 text-xs font-medium text-[#087f3e] transition hover:bg-green-50 sm:px-4 sm:py-2.5 sm:text-sm"
             >
               Home
             </Link>
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-lg bg-[#087f3e] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#066b34]"
+              className="rounded-lg bg-[#087f3e] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#066b34] sm:px-4 sm:py-2.5 sm:text-sm"
             >
               Logout
             </button>
@@ -429,10 +429,10 @@ export default function BookingPage() {
         </nav>
       </header>
 
-      <section className="bg-[#f7faf8] px-6 py-14">
+      <section className="bg-[#f7faf8] px-4 py-8 md:px-6 md:py-14">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-10 text-center">
-            <h2 className="text-3xl font-semibold text-gray-900">
+          <div className="mb-8 text-center md:mb-10">
+            <h2 className="text-2xl font-semibold text-gray-900 md:text-3xl">
               Book an Appointment
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-500">
@@ -442,7 +442,7 @@ export default function BookingPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:p-8">
             <form className="space-y-7" onSubmit={handleSubmit}>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -739,7 +739,7 @@ export default function BookingPage() {
                       No times are available on this date.
                     </p>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                       {slotsForSelectedDate.map((slot) => {
                         const label = `${formatDisplayTime(slot.start_time)} – ${formatDisplayTime(slot.end_time)}`;
                         const active = selectedSlotId === slot.id;
@@ -749,7 +749,7 @@ export default function BookingPage() {
                             key={slot.id}
                             type="button"
                             onClick={() => setSelectedSlotId(slot.id)}
-                            className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+                            className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition sm:w-auto sm:text-center ${
                               active
                                 ? "border-[#087f3e] bg-[#087f3e] text-white"
                                 : "border-gray-200 bg-white text-gray-700 hover:border-[#087f3e] hover:bg-green-50"
@@ -841,7 +841,7 @@ export default function BookingPage() {
                 <button
                   type="submit"
                   disabled={loading || !requiredComplete}
-                  className="rounded-lg bg-[#087f3e] px-7 py-3 text-sm font-medium text-white transition hover:bg-[#066b34] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="w-full rounded-lg bg-[#087f3e] px-7 py-3.5 text-sm font-medium text-white transition hover:bg-[#066b34] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
                 >
                   {loading ? "Submitting..." : "Request Appointment"}
                 </button>
@@ -853,7 +853,7 @@ export default function BookingPage() {
 
       {showAlert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-2xl sm:p-8">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <svg
                 className="h-8 w-8 text-[#087f3e]"
@@ -978,7 +978,7 @@ function BookingCalendar({
         <button
           type="button"
           onClick={() => setCursor(new Date(year, month - 1, 1))}
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 text-lg text-gray-600 hover:bg-gray-50"
         >
           ‹
         </button>
@@ -986,7 +986,7 @@ function BookingCalendar({
         <button
           type="button"
           onClick={() => setCursor(new Date(year, month + 1, 1))}
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 text-lg text-gray-600 hover:bg-gray-50"
         >
           ›
         </button>
@@ -995,7 +995,8 @@ function BookingCalendar({
       <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-400">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
           <div key={label} className="py-2">
-            {label}
+            <span className="sm:hidden">{label.charAt(0)}</span>
+            <span className="hidden sm:inline">{label}</span>
           </div>
         ))}
       </div>
@@ -1003,7 +1004,7 @@ function BookingCalendar({
       <div className="grid grid-cols-7 gap-1">
         {cells.map((cell, index) => {
           if (!cell) {
-            return <div key={`empty-${index}`} className="h-10 sm:h-11" />;
+            return <div key={`empty-${index}`} className="h-11" />;
           }
 
           const available = availableDates.has(cell.date);
@@ -1017,7 +1018,7 @@ function BookingCalendar({
               type="button"
               disabled={!clickable}
               onClick={() => onSelectDate(cell.date)}
-              className={`h-10 rounded-xl text-sm font-medium transition sm:h-11 ${
+              className={`h-11 rounded-xl text-sm font-medium transition ${
                 selected
                   ? "bg-[#087f3e] text-white"
                   : clickable

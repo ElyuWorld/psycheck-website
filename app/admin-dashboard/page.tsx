@@ -591,13 +591,13 @@ export default function AdminDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7faf8] text-gray-900">
+    <main className="min-h-screen overflow-x-hidden bg-[#f7faf8] text-gray-900">
 
       {/* HEADER */}
 
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
 
-        <div className="flex h-20 items-center justify-between px-5 md:px-8">
+        <div className="flex h-16 items-center justify-between px-4 md:h-20 md:px-8">
 
           <Link
             href="/"
@@ -610,7 +610,7 @@ export default function AdminDashboard() {
               width={50}
               height={50}
               priority
-              className="object-contain"
+              className="h-9 w-9 object-contain md:h-[50px] md:w-[50px]"
             />
 
             <div className="ml-3">
@@ -644,7 +644,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={handleLogout}
-              className="hidden rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:text-red-500 md:block"
+              className="rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-600 hover:text-red-500 md:px-4 md:text-sm"
             >
               Logout
             </button>
@@ -748,7 +748,7 @@ export default function AdminDashboard() {
 
         {/* MAIN */}
 
-        <section className="min-w-0 flex-1 p-5 md:p-8">
+        <section className="min-w-0 flex-1 p-4 pb-24 md:p-8 md:pb-8">
 
           {showAppointment && (
             <AppointmentDetails
@@ -814,7 +814,7 @@ export default function AdminDashboard() {
 
                 <div className="rounded-xl border border-gray-200 bg-white xl:col-span-2">
 
-                  <div className="flex items-center justify-between border-b border-gray-100 p-6">
+                  <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-4 md:p-6">
 
                     <div>
 
@@ -832,7 +832,7 @@ export default function AdminDashboard() {
                       onClick={() =>
                         selectTab("appointments")
                       }
-                      className="text-xs font-medium text-[#087f3e] hover:underline"
+                      className="shrink-0 rounded-lg px-2 py-2 text-xs font-medium text-[#087f3e] hover:underline"
                     >
                       View all
                     </button>
@@ -870,6 +870,10 @@ export default function AdminDashboard() {
 
                             <p className="mt-1 text-xs text-gray-500">
                               {appointment.appointmentType}
+                              <span className="sm:hidden">
+                                {" "}
+                                · {appointment.date}
+                              </span>
                             </p>
 
                           </div>
@@ -1063,7 +1067,66 @@ export default function AdminDashboard() {
 
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
 
-                <div className="overflow-x-auto">
+                <div className="md:hidden">
+                  {filteredStudents.length === 0 ? (
+                    <p className="px-4 py-10 text-center text-sm text-gray-500">
+                      No registered students yet. New student
+                      accounts from the login Register tab will
+                      appear here.
+                    </p>
+                  ) : (
+                    <div className="divide-y divide-gray-100">
+                      {filteredStudents.map((student) => (
+                        <div key={student.id} className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-50 font-semibold text-[#087f3e]">
+                              {(student.full_name || student.email)
+                                .charAt(0)
+                                .toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold">
+                                {student.full_name || "Unnamed student"}
+                              </p>
+                              <p className="mt-1 truncate text-xs text-gray-500">
+                                {student.email}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600">
+                            <p>
+                              <span className="text-gray-400">ID</span>
+                              <span className="mt-0.5 block font-medium text-gray-800">
+                                {student.student_id || "—"}
+                              </span>
+                            </p>
+                            <p>
+                              <span className="text-gray-400">Year</span>
+                              <span className="mt-0.5 block font-medium text-gray-800">
+                                {student.year_level || "—"}
+                              </span>
+                            </p>
+                            <p className="col-span-2">
+                              <span className="text-gray-400">Registered</span>
+                              <span className="mt-0.5 block font-medium text-gray-800">
+                                {new Date(student.created_at).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  }
+                                )}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="hidden overflow-x-auto md:block">
 
                   <table className="w-full min-w-[800px]">
 
@@ -1230,7 +1293,7 @@ export default function AdminDashboard() {
                     </Field>
 
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 
                       <Field label="Start">
 
@@ -1414,7 +1477,7 @@ export default function AdminDashboard() {
                           onClick={() =>
                             removeSchedule(slot.id)
                           }
-                          className="rounded-lg border border-red-100 px-3 py-2 text-xs text-red-500 hover:bg-red-50"
+                          className="w-full rounded-lg border border-red-100 px-3 py-2.5 text-xs text-red-500 hover:bg-red-50 sm:w-auto"
                         >
                           Remove
                         </button>
@@ -1466,7 +1529,48 @@ export default function AdminDashboard() {
 
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
 
-                <div className="overflow-x-auto">
+                <div className="md:hidden">
+                  {filteredAppointments.length === 0 ? (
+                    <p className="px-4 py-10 text-center text-sm text-gray-500">
+                      No appointments match this search.
+                    </p>
+                  ) : (
+                    <div className="divide-y divide-gray-100">
+                      {filteredAppointments.map((appointment) => (
+                        <div key={appointment.id} className="p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold">
+                                {appointment.studentName}
+                              </p>
+                              <p className="mt-1 text-xs text-gray-500">
+                                {appointment.studentId}
+                              </p>
+                            </div>
+                            <StatusBadge status={appointment.status} />
+                          </div>
+                          <p className="mt-3 text-sm text-gray-800">
+                            {appointment.appointmentType}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {appointment.date} · {appointment.time}
+                          </p>
+                          <span className="mt-3 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">
+                            {appointment.mode}
+                          </span>
+                          <button
+                            onClick={() => setShowAppointment(appointment)}
+                            className="mt-4 w-full rounded-lg bg-[#087f3e] px-3 py-2.5 text-xs font-medium text-white hover:bg-[#066b34]"
+                          >
+                            Manage
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="hidden overflow-x-auto md:block">
 
                   <table className="w-full min-w-[950px]">
 
@@ -1616,10 +1720,47 @@ export default function AdminDashboard() {
 
 
       {message && (
-        <div className="fixed bottom-6 right-6 z-[60] max-w-sm rounded-xl border border-green-100 bg-white px-4 py-3 text-sm text-green-800 shadow-lg">
+        <div className="fixed bottom-24 right-4 z-[60] max-w-sm rounded-xl border border-green-100 bg-white px-4 py-3 text-sm text-green-800 shadow-lg md:bottom-6 md:right-6">
           {message}
         </div>
       )}
+
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white/95 px-1 pt-1 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur md:hidden pb-[max(0.35rem,env(safe-area-inset-bottom))]">
+        <div className="grid grid-cols-5">
+          <MobileTabButton
+            active={activeTab === "dashboard" && !showAppointment}
+            onClick={() => selectTab("dashboard")}
+            icon={<DashboardIcon />}
+            label="Dashboard"
+          />
+          <MobileTabButton
+            active={activeTab === "students" && !showAppointment}
+            onClick={() => selectTab("students")}
+            icon={<StudentsIcon />}
+            label="Students"
+            badge={students.length || undefined}
+          />
+          <MobileTabButton
+            active={activeTab === "availability" && !showAppointment}
+            onClick={() => selectTab("availability")}
+            icon={<CalendarIcon />}
+            label="Schedule"
+          />
+          <MobileTabButton
+            active={activeTab === "appointments" && !showAppointment}
+            onClick={() => selectTab("appointments")}
+            icon={<AppointmentIcon />}
+            label="Appts"
+            badge={pending || undefined}
+          />
+          <MobileTabButton
+            active={activeTab === "analytics" && !showAppointment}
+            onClick={() => selectTab("analytics")}
+            icon={<ChartIcon />}
+            label="Analytics"
+          />
+        </div>
+      </nav>
 
 
     </main>
@@ -2113,7 +2254,7 @@ function AppointmentDetails({
       <button
         type="button"
         onClick={onClose}
-        className="mb-6 text-sm font-medium text-[#087f3e] hover:underline"
+        className="mb-6 inline-flex min-h-11 items-center text-sm font-medium text-[#087f3e] hover:underline"
       >
         ← Back
       </button>
@@ -2252,7 +2393,7 @@ function AppointmentDetails({
                   setFollowUp("yes");
                   setFollowUpNotice("");
                 }}
-                className={`rounded-lg border px-3 py-2 text-sm font-medium ${
+                className={`min-h-11 rounded-lg border px-3 py-2.5 text-sm font-medium ${
                   followUp === "yes"
                     ? "border-[#087f3e] bg-[#087f3e] text-white"
                     : "border-gray-200 bg-white text-gray-700 hover:bg-green-50"
@@ -2267,7 +2408,7 @@ function AppointmentDetails({
                   setFollowUp("no");
                   setFollowUpNotice("");
                 }}
-                className={`rounded-lg border px-3 py-2 text-sm font-medium ${
+                className={`min-h-11 rounded-lg border px-3 py-2.5 text-sm font-medium ${
                   followUp === "no"
                     ? "border-[#087f3e] bg-[#087f3e] text-white"
                     : "border-gray-200 bg-white text-gray-700 hover:bg-green-50"
@@ -2673,6 +2814,39 @@ function NavButton({
       {children}
     </button>
 
+  );
+}
+
+
+function MobileTabButton({
+  active,
+  onClick,
+  icon,
+  label,
+  badge,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  badge?: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[10px] font-medium ${
+        active ? "text-[#087f3e]" : "text-gray-500"
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+      {badge ? (
+        <span className="absolute right-1.5 top-1 min-w-4 rounded-full bg-yellow-400 px-1 text-[9px] font-semibold leading-4 text-yellow-900">
+          {badge}
+        </span>
+      ) : null}
+    </button>
   );
 }
 
