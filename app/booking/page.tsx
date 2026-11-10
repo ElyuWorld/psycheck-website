@@ -938,14 +938,9 @@ function BookingCalendar({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [cursor, setCursor] = useState(() => {
-    const firstAvailable = [...availableDates].sort()[0];
-    if (firstAvailable) {
-      const [year, month] = firstAvailable.split("-").map(Number);
-      return new Date(year, month - 1, 1);
-    }
-    return new Date(today.getFullYear(), today.getMonth(), 1);
-  });
+  const [cursor, setCursor] = useState(
+    () => new Date(today.getFullYear(), today.getMonth(), 1)
+  );
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
