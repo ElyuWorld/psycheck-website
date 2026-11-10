@@ -45,6 +45,7 @@ export default function BookingPage() {
   const [slots, setSlots] = useState<Availability[]>([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlotId, setSelectedSlotId] = useState("");
+  const [attempted, setAttempted] = useState(false);
 
   useEffect(() => {
     async function checkAuth() {
@@ -137,19 +138,40 @@ export default function BookingPage() {
   const selectedSlot =
     slotsForSelectedDate.find((slot) => slot.id === selectedSlotId) || null;
 
-  const referralComplete =
-    service !== "referral" ||
-    Boolean(
-      referralName.trim() &&
-        referralStudentNumber.trim() &&
-        referralGmail.trim() &&
-        referralCause.trim() &&
-        referralSession
-    );
-
-  const requiredComplete = Boolean(
-    service && selectedDate && selectedSlotId && reason && referralComplete
+  const missingFields = useMemo(
+    () =>
+      getMissingRequiredFields({
+        service,
+        reason,
+        selectedDate,
+        selectedSlotId,
+        referralName,
+        referralStudentNumber,
+        referralGmail,
+        referralCause,
+        referralSession,
+      }),
+    [
+      service,
+      reason,
+      selectedDate,
+      selectedSlotId,
+      referralName,
+      referralStudentNumber,
+      referralGmail,
+      referralCause,
+      referralSession,
+    ]
   );
+
+  const missingIds = useMemo(
+    () => new Set(missingFields.map((field) => field.id)),
+    [missingFields]
+  );
+
+  function fieldClass(id: string) {
+    return bookingInputClass(attempted && missingIds.has(id));
+  }
 
   async function handleLogout() {
     const supabase = createClient();
@@ -159,15 +181,23 @@ export default function BookingPage() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setAttempted(true);
     setError("");
     setEmailNotice("");
-    setLoading(true);
+
+    if (missingFields.length > 0) {
+      document
+        .getElementById(missingFields[0].id)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
 
     if (!student?.fullName) {
       setError("Your registered name could not be loaded. Please log in again.");
-      setLoading(false);
       return;
     }
+
+    setLoading(true);
 
     const form = e.currentTarget;
     const data = new FormData(form);
@@ -187,14 +217,10 @@ export default function BookingPage() {
       data.get("referralSession") || referralSession
     ).trim();
 
-    if (!serviceValue) {
-      setError("Please select an appointment service.");
-      setLoading(false);
-      return;
-    }
-
-    if (!selectedDate) {
-      setError("Please select an available date.");
+    if (serviceValue === "referral" && !isParsuStudentEmail(referredGmail)) {
+      setError(
+        `Use the referred student's ParSU email ending in ${PARSU_STUDENT_EMAIL_SUFFIX}.`
+      );
       setLoading(false);
       return;
     }
@@ -203,34 +229,6 @@ export default function BookingPage() {
       setError("Please select an available time.");
       setLoading(false);
       return;
-    }
-
-    if (!reasonValue) {
-      setError("Please select a reason for the appointment.");
-      setLoading(false);
-      return;
-    }
-
-    if (serviceValue === "referral") {
-      if (
-        !referredName ||
-        !referredStudentNumber ||
-        !referredGmail ||
-        !referredCause ||
-        (referredSession !== "Face to Face" && referredSession !== "Online")
-      ) {
-        setError("Please complete all referral fields.");
-        setLoading(false);
-        return;
-      }
-
-      if (!isParsuStudentEmail(referredGmail)) {
-        setError(
-          `Use the referred student's ParSU email ending in ${PARSU_STUDENT_EMAIL_SUFFIX}.`
-        );
-        setLoading(false);
-        return;
-      }
     }
 
     const appointmentType = SERVICE_LABELS[serviceValue] || serviceValue;
@@ -360,6 +358,7 @@ export default function BookingPage() {
       setReferralSession("");
       setSelectedDate("");
       setSelectedSlotId("");
+      setAttempted(false);
       setShowAlert(true);
     } catch (err) {
       const messageText =
@@ -443,7 +442,11 @@ export default function BookingPage() {
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:p-8">
-            <form className="space-y-7" onSubmit={handleSubmit}>
+            <form
+              className="space-y-7"
+              onSubmit={handleSubmit}
+              noValidate
+            >
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
                   Student Information
@@ -519,7 +522,7 @@ export default function BookingPage() {
                       setReferralSession("");
                     }
                   }}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
+                  className={fieldClass("service")}
                 >
                   <option value="" disabled>
                     Select appointment service
@@ -561,7 +564,7 @@ export default function BookingPage() {
                         value={referralName}
                         onChange={(e) => setReferralName(e.target.value)}
                         placeholder="Enter the student's name"
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
+                        className={fieldClass("referralName")}
                       />
                     </div>
 
@@ -584,7 +587,7 @@ export default function BookingPage() {
                           setReferralStudentNumber(e.target.value)
                         }
                         placeholder="Enter student number"
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
+                        className={fieldClass("referralStudentNumber")}
                       />
                     </div>
                   </div>
@@ -611,7 +614,7 @@ export default function BookingPage() {
                         setSelectedDate("");
                         setSelectedSlotId("");
                       }}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
+                      className={fieldClass("referralSession")}
                     >
                       <option value="" disabled>
                         Select session
@@ -643,7 +646,7 @@ export default function BookingPage() {
                       placeholder={`juan.delacruz${PARSU_STUDENT_EMAIL_SUFFIX}`}
                       pattern={PARSU_STUDENT_EMAIL_HTML_PATTERN}
                       title={`Must end with ${PARSU_STUDENT_EMAIL_SUFFIX}`}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
+                      className={fieldClass("referralGmail")}
                     />
                     <p className="mt-1.5 text-xs text-gray-500">
                       Required format: yourname{PARSU_STUDENT_EMAIL_SUFFIX}
@@ -667,13 +670,13 @@ export default function BookingPage() {
                       value={referralCause}
                       onChange={(e) => setReferralCause(e.target.value)}
                       placeholder="Explain why this student is being referred..."
-                      className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
+                      className={`${fieldClass("referralCause")} resize-none`}
                     />
                   </div>
                 </div>
               )}
 
-              <div>
+              <div id="schedule-date">
                 <h3 className="text-lg font-semibold text-gray-900">
                   Available Schedule
                   <span className="ml-1 text-red-500">*</span>
@@ -700,6 +703,19 @@ export default function BookingPage() {
                 />
               </div>
 
+              {attempted && missingIds.has("schedule-date") && (
+                <p className="text-sm text-red-600">
+                  Please select an available date.
+                </p>
+              )}
+              {attempted &&
+                selectedDate &&
+                missingIds.has("schedule-time") && (
+                  <p className="text-sm text-red-600">
+                    Please select an available time.
+                  </p>
+                )}
+
               {visibleSlots.length === 0 ? (
                 <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                   {slots.length === 0
@@ -720,7 +736,7 @@ export default function BookingPage() {
               )}
 
               {selectedDate && (
-                <div>
+                <div id="schedule-time">
                   <p className="mb-3 text-sm font-medium text-gray-700">
                     Available times for{" "}
                     {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(
@@ -789,7 +805,7 @@ export default function BookingPage() {
                   required
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100"
+                  className={fieldClass("reason")}
                 >
                   <option value="" disabled>
                     Select an option
@@ -831,6 +847,26 @@ export default function BookingPage() {
                 </p>
               </div>
 
+              {attempted && missingFields.length > 0 && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                  <p className="font-medium">
+                    Please fill out these required fields:
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    {missingFields.map((field) => (
+                      <li key={`${field.id}-${field.label}`}>
+                        <a
+                          href={`#${field.id}`}
+                          className="underline decoration-red-300 underline-offset-2 hover:text-red-700"
+                        >
+                          {field.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {error && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                   {error}
@@ -840,7 +876,7 @@ export default function BookingPage() {
               <div className="flex justify-end border-t border-gray-100 pt-6">
                 <button
                   type="submit"
-                  disabled={loading || !requiredComplete}
+                  disabled={loading}
                   className="w-full rounded-lg bg-[#087f3e] px-7 py-3.5 text-sm font-medium text-white transition hover:bg-[#066b34] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
                 >
                   {loading ? "Submitting..." : "Request Appointment"}
@@ -905,6 +941,86 @@ export default function BookingPage() {
       )}
     </main>
   );
+}
+
+function bookingInputClass(invalid: boolean) {
+  return `w-full rounded-lg border bg-white px-4 py-3 text-sm outline-none transition focus:border-[#087f3e] focus:ring-2 focus:ring-green-100 ${
+    invalid ? "border-red-400" : "border-gray-300"
+  }`;
+}
+
+function getMissingRequiredFields({
+  service,
+  reason,
+  selectedDate,
+  selectedSlotId,
+  referralName,
+  referralStudentNumber,
+  referralGmail,
+  referralCause,
+  referralSession,
+}: {
+  service: string;
+  reason: string;
+  selectedDate: string;
+  selectedSlotId: string;
+  referralName: string;
+  referralStudentNumber: string;
+  referralGmail: string;
+  referralCause: string;
+  referralSession: "" | "Face to Face" | "Online";
+}) {
+  const missing: Array<{ id: string; label: string }> = [];
+
+  if (!service) {
+    missing.push({ id: "service", label: "Appointment Service" });
+  }
+
+  if (service === "referral") {
+    if (!referralName.trim()) {
+      missing.push({
+        id: "referralName",
+        label: "Name of the person being referred",
+      });
+    }
+    if (!referralStudentNumber.trim()) {
+      missing.push({ id: "referralStudentNumber", label: "Student Number" });
+    }
+    if (!referralSession) {
+      missing.push({ id: "referralSession", label: "Session" });
+    }
+    if (!referralGmail.trim()) {
+      missing.push({
+        id: "referralGmail",
+        label: "Gmail of the person being referred",
+      });
+    } else if (!isParsuStudentEmail(referralGmail.trim())) {
+      missing.push({
+        id: "referralGmail",
+        label: `Gmail of the person being referred (must end with ${PARSU_STUDENT_EMAIL_SUFFIX})`,
+      });
+    }
+    if (!referralCause.trim()) {
+      missing.push({ id: "referralCause", label: "Cause of Referring" });
+    }
+  }
+
+  if (!selectedDate) {
+    missing.push({ id: "schedule-date", label: "Available date" });
+  }
+
+  if (!selectedSlotId) {
+    missing.push({
+      id: selectedDate ? "schedule-time" : "schedule-date",
+      label: "Available time",
+    });
+  }
+
+  if (!reason) {
+    missing.push({ id: "reason", label: "Reason for Appointment" });
+  }
+
+  return missing;
 }
 
 function slotMatchesService(
