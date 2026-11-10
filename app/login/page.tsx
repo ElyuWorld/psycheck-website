@@ -333,16 +333,14 @@ export default function Login() {
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Password
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
+                  onChange={(value) => {
+                    setPassword(value);
                     setError("");
                   }}
                   required
-                  className={inputClass}
                 />
               </div>
 
@@ -462,14 +460,12 @@ export default function Login() {
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Password
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="At least 6 characters"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={setPassword}
                   required
                   minLength={6}
-                  className={inputClass}
                 />
               </div>
 
@@ -477,14 +473,12 @@ export default function Login() {
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Confirm Password
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="Re-enter password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={setConfirmPassword}
                   required
                   minLength={6}
-                  className={inputClass}
                 />
               </div>
 
@@ -532,5 +526,84 @@ export default function Login() {
         </p>
       </div>
     </main>
+  );
+}
+
+function PasswordInput({
+  value,
+  onChange,
+  placeholder,
+  required,
+  minLength,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  required?: boolean;
+  minLength?: number;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="relative">
+      <input
+        type={visible ? "text" : "password"}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        minLength={minLength}
+        autoComplete={minLength ? "new-password" : "current-password"}
+        className={`${inputClass} pr-12`}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((open) => !open)}
+        aria-label={visible ? "Hide password" : "Show password"}
+        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-400 transition hover:text-[#047857]"
+      >
+        {visible ? <EyeOffIcon /> : <EyeIcon />}
+      </button>
+    </div>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 3l18 18" />
+      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+      <path d="M9.9 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.2 3.2" />
+      <path d="M6.6 6.6C4 8.4 2 12 2 12s3.5 7 10 7a10.8 10.8 0 0 0 3.1-.5" />
+    </svg>
   );
 }
