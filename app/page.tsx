@@ -149,6 +149,13 @@ export default function Home() {
               >
                 Log In
               </Link>
+              <a
+                href="/PsyCheck-Student-User-Manual.pdf"
+                download="PsyCheck-Student-User-Manual.pdf"
+                className="rounded-xl border border-emerald-200 px-5 py-3 text-center text-sm font-medium text-[#087f3e]"
+              >
+                User manual
+              </a>
             </div>
           </div>
         )}
@@ -190,6 +197,13 @@ export default function Home() {
               >
                 See how it works
               </a>
+              <a
+                href="/PsyCheck-Student-User-Manual.pdf"
+                download="PsyCheck-Student-User-Manual.pdf"
+                className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-white/80 px-6 py-3.5 text-sm font-semibold text-[#087f3e] transition hover:bg-emerald-50"
+              >
+                User manual
+              </a>
             </div>
           </div>
 
@@ -225,6 +239,15 @@ export default function Home() {
             <p className="mt-4 text-base leading-7 text-gray-600">
               PsyCheck keeps the path to help clear — from registration to
               appointment request.
+            </p>
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              <a
+                href="/PsyCheck-Student-User-Manual.pdf"
+                download="PsyCheck-Student-User-Manual.pdf"
+                className="font-semibold text-[#087f3e] underline decoration-emerald-300 underline-offset-4 transition hover:decoration-[#087f3e]"
+              >
+                Download the student user manual (PDF)
+              </a>
             </p>
           </div>
 
@@ -347,6 +370,13 @@ export default function Home() {
               </p>
             </div>
           </div>
+          <a
+            href="/PsyCheck-Student-User-Manual.pdf"
+            download="PsyCheck-Student-User-Manual.pdf"
+            className="text-sm font-medium text-[#087f3e] underline decoration-emerald-300 underline-offset-4 transition hover:decoration-[#087f3e]"
+          >
+            Student user manual (PDF)
+          </a>
           <p className="text-sm text-gray-500">© 2026 PsyCheck. All rights reserved.</p>
         </div>
       </footer>

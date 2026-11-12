@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>PsyCheck Student User Manual</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #1f2937;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.45;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .sheet {
+      width: 210mm;
+      height: 297mm;
+      padding: 13mm 14mm 10mm;
+      page-break-after: always;
+      break-after: page;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .sheet:last-child { page-break-after: auto; break-after: auto; }
+    .body { flex: 1; }
+    .foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 3mm;
+      margin-top: 4mm;
+      color: #6b7280;
+      font-size: 8.5pt;
+    }
+    .foot strong { color: #087f3e; font-weight: 650; }
+
+    .kicker {
+      margin: 0;
+      color: #087f3e;
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    h2 {
+      margin: 1.5mm 0 2mm;
+      font-size: 22pt;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      color: #111827;
+      font-weight: 650;
+    }
+    h3 {
+      margin: 0 0 1.5mm;
+      font-size: 12pt;
+      color: #064e3b;
+    }
+    p { margin: 0 0 2.5mm; }
+    .lede { color: #4b5563; max-width: 165mm; }
+
+    .cover {
+      padding: 0;
+      background:
+        radial-gradient(circle at 85% 12%, rgba(167, 243, 208, 0.28), transparent 32%),
+        linear-gradient(165deg, #053525 0%, #087f3e 48%, #0f9f6e 100%);
+      color: #fff;
+    }
+    .cover-inner {
+      height: 100%;
+      padding: 22mm 18mm 16mm;
+      display: flex;
+      flex-direction: column;
+    }
+    .cover-logo {
+      width: 28mm;
+      height: 28mm;
+      object-fit: contain;
+      background: #ecfdf5;
+      border-radius: 8mm;
+      padding: 2mm;
+    }
+    .cover .kicker {
+      color: #bbf7d0;
+      margin-top: 18mm;
+    }
+    .cover h1 {
+      margin: 2mm 0 0;
+      font-size: 54pt;
+      line-height: 0.95;
+      letter-spacing: -0.045em;
+      font-weight: 680;
+    }
+    .cover .tag {
+      margin-top: 6mm;
+      font-size: 16pt;
+      color: #d1fae5;
+    }
+    .cover .rule {
+      width: 28mm;
+      height: 1.2mm;
+      background: #6ee7b7;
+      border-radius: 2mm;
+      margin: 8mm 0;
+    }
+    .cover .lead {
+      max-width: 145mm;
+      font-size: 13pt;
+      line-height: 1.45;
+      color: #ecfdf5;
+    }
+    .cover-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4mm;
+      margin-top: 12mm;
+    }
+    .cover-steps div {
+      border-top: 2px solid rgba(167, 243, 208, 0.7);
+      padding-top: 3mm;
+      font-size: 11pt;
+      line-height: 1.35;
+    }
+    .cover-steps b {
+      display: block;
+      margin-bottom: 1.2mm;
+      color: #a7f3d0;
+      font-size: 8pt;
+      letter-spacing: 0.14em;
+    }
+    .cover-spacer { flex: 1; min-height: 12mm; }
+    .url-pill {
+      display: inline-block;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      padding: 2.5mm 5mm;
+      font-size: 11pt;
+      letter-spacing: 0.01em;
+    }
+    .cover-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10mm;
+      padding-top: 5mm;
+      border-top: 1px solid rgba(255,255,255,0.22);
+      font-size: 10pt;
+      color: #d1fae5;
+    }
+
+    .path {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3mm;
+      margin: 4mm 0 5mm;
+    }
+    .path article {
+      background: #f0fdf4;
+      border: 1px solid #d1fae5;
+      border-radius: 4mm;
+      padding: 3.5mm 3.5mm 3.2mm;
+    }
+    .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 7mm;
+      height: 7mm;
+      border-radius: 99px;
+      background: #087f3e;
+      color: #fff;
+      font-size: 9pt;
+      font-weight: 700;
+    }
+    .path h3 { margin: 2mm 0 1mm; font-size: 11pt; color: #111827; }
+    .path p { margin: 0; font-size: 8.7pt; color: #4b5563; line-height: 1.35; }
+
+    figure { margin: 0; }
+    figure img {
+      width: 100%;
+      display: block;
+      border: 1px solid #d1fae5;
+      border-radius: 3.5mm;
+    }
+    figcaption {
+      margin-top: 1.6mm;
+      font-size: 8pt;
+      color: #6b7280;
+    }
+    .home-shot { margin-top: 1mm; }
+    .home-shot img { border-radius: 3mm; }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 62mm;
+      gap: 6mm;
+      align-items: start;
+    }
+    .split.wide-photo { grid-template-columns: 1fr 80mm; }
+    .under { margin-top: 4.5mm; }
+    ol.steps { margin: 0; padding: 0; list-style: none; }
+    ol.steps li {
+      display: grid;
+      grid-template-columns: 7mm 1fr;
+      gap: 2.5mm;
+      margin: 0 0 2.6mm;
+    }
+    ol.steps strong { color: #111827; }
+    ol.steps p { margin: 0.3mm 0 0; color: #4b5563; font-size: 9.6pt; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2mm;
+      font-size: 9.4pt;
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 2mm 2.4mm;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      color: #065f46;
+      font-size: 8pt;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-bottom: 1.5px solid #a7f3d0;
+    }
+    td:first-child { font-weight: 650; color: #111827; width: 38mm; }
+
+    .note, .warn {
+      border-radius: 3.5mm;
+      padding: 3.2mm 4mm;
+      margin-top: 3mm;
+    }
+    .note { background: #f0fdf4; border: 1px solid #bbf7d0; }
+    .warn { background: #fffbeb; border: 1px solid #fde68a; }
+    .note p, .warn p { margin: 0; font-size: 9.5pt; }
+    .note strong { color: #065f46; }
+    .warn strong { color: #92400e; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 2mm; margin: 1mm 0 2mm; }
+    .chip {
+      background: #fff;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      border-radius: 99px;
+      padding: 1mm 3mm;
+      font-size: 9pt;
+      font-weight: 650;
+    }
+    .legend { display: flex; gap: 5mm; margin: 1mm 0 2mm; font-size: 9pt; color: #4b5563; }
+    .dot { display: inline-block; width: 3mm; height: 3mm; border-radius: 1mm; margin-right: 1.4mm; vertical-align: -0.3mm; }
+    .dot.avail { background: #d1fae5; box-shadow: inset 0 0 0 1px #087f3e; }
+    .dot.sel { background: #087f3e; }
+    .dot.no { background: #e5e7eb; }
+
+    .modal {
+      margin-top: 2mm;
+      background: #f3f4f6;
+      border-radius: 4mm;
+      padding: 5mm;
+    }
+    .modal-card {
+      background: #fff;
+      border-radius: 4mm;
+      padding: 6mm 7mm 5.5mm;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .check {
+      width: 12mm;
+      height: 12mm;
+      margin: 0 auto 3mm;
+      border-radius: 99px;
+      background: #dcfce7;
+      color: #087f3e;
+      font-size: 16pt;
+      line-height: 12mm;
+      font-weight: 700;
+    }
+    .modal-card h3 { font-size: 14pt; color: #111827; margin-bottom: 2mm; }
+    .modal-card p { color: #6b7280; font-size: 9.5pt; }
+    .status {
+      display: inline-block;
+      margin-top: 1mm;
+      background: #f0fdf4;
+      color: #087f3e;
+      font-weight: 700;
+      border-radius: 2mm;
+      padding: 2mm 4mm;
+      font-size: 10pt;
+    }
+    .ok {
+      display: block;
+      margin: 4mm auto 0;
+      width: 42mm;
+      background: #087f3e;
+      color: #fff;
+      border-radius: 2mm;
+      padding: 2.2mm 0;
+      font-weight: 650;
+      font-size: 10pt;
+    }
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+      margin-top: 3mm;
+    }
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 3.5mm;
+      padding: 3.5mm 4mm;
+    }
+    .card h3 { font-size: 11pt; margin-bottom: 1.5mm; }
+    .card p, .card li { font-size: 9.3pt; color: #374151; }
+    .card ul, .card ol { margin: 0; padding-left: 4.5mm; }
+    .card li { margin: 0 0 1.2mm; }
+    .mail {
+      font-family: Consolas, "Segoe UI", sans-serif;
+      font-size: 8.6pt;
+      background: #f9fafb;
+      border-radius: 2mm;
+      padding: 1.5mm 2mm;
+      color: #111827;
+    }
+  </style>
+</head>
+<body>
+
+<section class="sheet cover">
+  <div class="cover-inner">
+    <img class="cover-logo" src="images/logo.png" alt="PsyCheck logo" />
+    <p class="kicker">Student user manual</p>
+    <h1>PsyCheck</h1>
+    <p class="tag">Mental health matters, you matter.</p>
+    <div class="rule"></div>
+    <p class="lead">How to register, log in, request a psychosocial support appointment, and wait for approval. The pictures in this guide are from the live site.</p>
+    <div class="cover-steps">
+      <div><b>01</b>Register with your ParSU email</div>
+      <div><b>02</b>Log in as Student</div>
+      <div><b>03</b>Request an open time</div>
+      <div><b>04</b>Wait while it is Pending</div>
+    </div>
+    <div class="cover-spacer"></div>
+    <div><span class="url-pill">https://psycheck-website.vercel.app</span></div>
+    <div class="cover-meta">
+      <span>For ParSU students</span>
+      <span>November 2026</span>
+    </div>
+  </div>
+</section>
+
+<section class="sheet">
+  <div class="body">
+    <p class="kicker">Start here</p>
+    <h2>Four steps to ask for support</h2>
+    <p class="lede">PsyCheck is the school site where students request psychosocial support. You create a student account, sign in, choose an open schedule, and wait while a counselor reviews the request.</p>
+    <div class="path">
+      <article>
+        <span class="num">1</span>
+        <h3>Register</h3>
+        <p>Create a student account with your ParSU email.</p>
+      </article>
+      <article>
+        <span class="num">2</span>
+        <h3>Log in</h3>
+        <p>Sign in as Student. You go straight to booking.</p>
+      </article>
+      <article>
+        <span class="num">3</span>
+        <h3>Book</h3>
+        <p>Pick a service, an open date and time, and a reason.</p>
+      </article>
+      <article>
+        <span class="num">4</span>
+        <h3>Wait</h3>
+        <p>The request stays Pending until it is reviewed.</p>
+      </article>
+    </div>
+    <figure class="home-shot">
+      <img src="images/home.png" alt="PsyCheck home page with Book Now and Log In" />
+      <figcaption>Home page. Book Now and Log In both open the same sign-in screen.</figcaption>
+    </figure>
+    <div class="two">
+      <div class="card">
+        <h3>Have these ready</h3>
+        <ul>
+          <li>Your full name and student ID</li>
+          <li>Your year level (1st through 4th Year)</li>
+          <li>Your ParSU email, ending in <strong>.pbox@parsu.edu.ph</strong></li>
+          <li>A password of at least 6 characters</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>What “approval” means</h3>
+        <p>Creating an account does not need approval. You can sign in after you register.</p>
+        <p style="margin-bottom:0">The wait starts after you click <strong>Request Appointment</strong>. The request stays <strong>Pending</strong> until a counselor or administrator reviews it.</p>
+      </div>
+    </div>
+  </div>
+  <footer class="foot"><span><strong>PsyCheck</strong> &nbsp;Student user manual</span><span>2</span></footer>
+</section>
+
+<section class="sheet">
+  <div class="body">
+    <p class="kicker">Step 1 · Register</p>
+    <h2>Create your student account</h2>
+    <p class="lede">Registration is for students only. Open the site, then choose <strong>Log In</strong> or <strong>Book Now</strong>.</p>
+    <div class="split">
+      <div>
+        <ol class="steps">
+          <li>
+            <span class="num">1</span>
+            <div>
+              <strong>Open the Register tab</strong>
+              <p>On Welcome to PsyCheck, choose <strong>Register</strong>. You can also use <strong>Create an account</strong> under the login form.</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">2</span>
+            <div>
+              <strong>Enter your school details</strong>
+              <p>Full name, student ID, and year level. Use the name you want counselors to see. You cannot edit it later on the booking form.</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">3</span>
+            <div>
+              <strong>Use your ParSU email</strong>
+              <p>It must end with <strong>.pbox@parsu.edu.ph</strong>. Example: juan.delacruz.pbox@parsu.edu.ph</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">4</span>
+            <div>
+              <strong>Choose a password</strong>
+              <p>At least 6 characters. Type it again in Confirm Password. The eye icon shows or hides what you typed.</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">5</span>
+            <div>
+              <strong>Click Register as Student</strong>
+              <p>If you are signed in right away, PsyCheck opens Book an Appointment. Otherwise it returns to Login and tells you to sign in as Student.</p>
+            </div>
+          </li>
+        </ol>
+        <div class="note">
+          <p><strong>Student accounts only.</strong> The green note on the form says new accounts appear in the Admin Students list. That is for the office. You do not wait for anyone before you can log in.</p>
+        </div>
+      </div>
+      <figure>
+        <img src="images/register.png" alt="PsyCheck student registration form" />
+        <figcaption>Register tab on the live site.</figcaption>
+      </figure>
+    </div>
+    <table class="under">
+      <thead>
+        <tr><th>Field</th><th>What to enter</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Full Name</td><td>The name counselors should see. Example: Juan Dela Cruz.</td></tr>
+        <tr><td>Student ID</td><td>Your ID number. Example: 2024-00123.</td></tr>
+        <tr><td>Year Level</td><td>1st Year, 2nd Year, 3rd Year, or 4th Year.</td></tr>
+        <tr><td>Email</td><td>Must end in <strong>.pbox@parsu.edu.ph</strong>. Example: juan.delacruz.pbox@parsu.edu.ph.</td></tr>
+        <tr><td>Password</td><td>At least 6 characters. The eye icon lets you check the spelling.</td></tr>
+        <tr><td>Confirm Password</td><td>Type that same password again.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <footer class="foot"><span><strong>PsyCheck</strong> &nbsp;Student user manual</span><span>3</span></footer>
+</section>
+
+<section class="sheet">
+  <div class="body">
+    <p class="kicker">Step 1 · Register</p>
+    <h2>After you click Register</h2>
+    <p class="lede">Every field is required. If the email is not a ParSU student address, or the two passwords differ, the form stays put and the reason appears in red. When it succeeds, you will see one of the two results below.</p>
+    <div class="two">
+      <div class="card">
+        <h3>A complete example</h3>
+        <ul>
+          <li><strong>Full Name</strong> — Juan Dela Cruz</li>
+          <li><strong>Student ID</strong> — 2024-00123</li>
+          <li><strong>Year Level</strong> — 1st Year</li>
+          <li><strong>Email</strong> — juan.delacruz.pbox@parsu.edu.ph</li>
+          <li><strong>Password</strong> — at least 6 characters, typed twice</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Check before you submit</h3>
+        <ul>
+          <li>The Register tab is the one that looks selected.</li>
+          <li>The email ends in .pbox@parsu.edu.ph, including the dot before pbox.</li>
+          <li>You opened the eye icon and the password matches Confirm Password.</li>
+          <li>Year level is chosen. “Select year level” is not a finished answer.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="two" style="margin-top:4mm">
+      <div class="card">
+        <h3>After a successful register</h3>
+        <ul>
+          <li>You may go straight to <strong>Book an Appointment</strong>.</li>
+          <li>Or you see: “Registration successful. You can now log in as Student with your email and password.”</li>
+          <li>Keep the same email and password. There is no separate approval for the account.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>If register does not finish</h3>
+        <ul>
+          <li>“Use your ParSU student email ending in .pbox@parsu.edu.ph.”</li>
+          <li>“Password must be at least 6 characters.”</li>
+          <li>“Passwords do not match.”</li>
+          <li>“Please complete all registration fields.”</li>
+        </ul>
+      </div>
+    </div>
+    <div class="warn">
+      <p><strong>Use your own account.</strong> Do not share your password. On a shared computer, log out when you finish. Logout is on the booking page, at the top right.</p>
+    </div>
+  </div>
+  <footer class="foot"><span><strong>PsyCheck</strong> &nbsp;Student user manual</span><span>4</span></footer>
+</section>
+
+<section class="sheet">
+  <div class="body">
+    <p class="kicker">Step 2 · Log in</p>
+    <h2>Sign in as Student</h2>
+    <p class="lede">From the home page, choose <strong>Log In</strong> or <strong>Book Now</strong>. Both open Welcome to PsyCheck. Stay on the <strong>Login</strong> tab.</p>
+    <div class="split">
+      <div>
+        <ol class="steps">
+          <li>
+            <span class="num">1</span>
+            <div>
+              <strong>Choose Student</strong>
+              <p>Under Login as, <strong>Student</strong> must be the green button. Counselor and Admin are for staff. A student account will not open those roles.</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">2</span>
+            <div>
+              <strong>Enter your email and password</strong>
+              <p>Use the ParSU email and password from registration. The eye icon shows the password if you need to check it.</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">3</span>
+            <div>
+              <strong>Click Login as Student</strong>
+              <p>The button says “Signing in...” while it checks the account. A successful login opens <strong>Book an Appointment</strong>.</p>
+            </div>
+          </li>
+        </ol>
+        <div class="note">
+          <p><strong>You should land on booking.</strong> The top of that page shows your name, a Home button, and Logout. If you are sent back to login, the email or password did not match, or Student was not selected.</p>
+        </div>
+        <div class="warn">
+          <p><strong>Wrong role.</strong> If you pick Counselor or Admin, PsyCheck signs you out and says the account is registered as student, not that role. Choose Student and try again.</p>
+        </div>
+      </div>
+      <figure>
+        <img src="images/login.png" alt="PsyCheck login form with Student selected" />
+        <figcaption>Login tab. Student is the role to select.</figcaption>
+      </figure>
+    </div>
+    <div class="two under">
+      <div class="card">
+        <h3>Parts of this screen</h3>
+        <ul>
+          <li><strong>Login / Register</strong> switches between signing in and creating an account.</li>
+          <li><strong>Login as</strong> must stay on Student.</li>
+          <li><strong>Create an account</strong> jumps to the register form if you do not have one yet.</li>
+          <li><strong>Back to Home</strong> leaves this screen without signing in.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>If the password fails</h3>
+        <ul>
+          <li>The message “Invalid email or password” means one of the two does not match the account.</li>
+          <li>Retype the ParSU email. It is stored in lowercase.</li>
+          <li>Use the eye icon, then try Login as Student again.</li>
+          <li>A new student uses Register first. Login cannot create the account.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer class="foot"><span><strong>PsyCheck</strong> &nbsp;Student user manual</span><span>5</span></footer>
+</section>
+
+<section class="sheet">
+  <div class="body">
+    <p class="kicker">Step 3 · Book</p>
+    <h2>The appointment page</h2>
+    <p class="lede">You must be signed in. If you open booking without an account, PsyCheck sends you to login first. Your name, student ID, email, and year level are copied from registration. You do not type them again.</p>
+    <div class="split wide-photo">
+      <div>
+        <h3>What is already filled in</h3>
+        <p>The green Student Information box is labeled “Logged in as.” It shows the name, ID, email, and year level from your account. If the name is missing, log out and sign in again.</p>
+        <h3 style="margin-top:3mm">Buttons at the top</h3>
+        <p><strong>Home</strong> returns to the public page. You can come back to booking while you are still signed in. <strong>Logout</strong> ends the session. Use it on a shared computer.</p>
+        <h3 style="margin-top:3mm">What you still choose</h3>
+        <p>Fields with a red asterisk are required: appointment service, an available date, an available time, and a reason. Additional Reasons is optional.</p>
+        <div class="note">
+          <p>The names in the photo are from a sample login. Your own registration details appear in that green box.</p>
+        </div>
+      </div>
+      <figure>
+        <img src="images/booking.png" alt="Book an Appointment form with student details and calendar" />
+        <figcaption>Book an Appointment, after a student logs in.</figcaption>
+      </figure>
+    </div>
+    <div class="path under">
+      <article>
+        <span class="num">1</span>
+        <h3>Your details</h3>
+        <p>Already taken from registration. Check that they are yours.</p>
+      </article>
+      <article>
+        <span class="num">2</span>
+        <h3>Service</h3>
+        <p>Face to Face, Online, or Referral.</p>
+      </article>
+      <article>
+        <span class="num">3</span>
+        <h3>Schedule</h3>
+        <p>A posted date, then one of the times under it.</p>
+      </article>
+      <article>
+        <span class="num">4</span>
+        <h3>Reason</h3>
+        <p>Pick a reason, then Request Appointment.</p>
+      </article>
+    </div>
+  </div>
+  <footer class="foot"><span><strong>PsyCheck</strong> &nbsp;Student user manual</span><span>6</span></footer>
+</section>
+
+<section class="sheet">
+  <div class="body">
+    <p class="kicker">Step 3 · Book</p>
+    <h2>Choose a service and a time</h2>
+    <div class="split wide-photo">
+      <div>
+        <ol class="steps">
+          <li>
+            <span class="num">1</span>
+            <div>
+              <strong>Appointment Service</strong>
+              <p>Open the list and choose one. Only dates posted for that service can be selected. Changing the service clears a date you already picked.</p>
+            </div>
+          </li>
+        </ol>
+        <div class="chips">
+          <span class="chip">Face to Face</span>
+          <span class="chip">Online</span>
+          <span class="chip">Referral</span>
+        </div>
+        <p>Face to Face is an in-person session. Online is a remote session. Referral is for requesting support for another student. Referral asks for that student’s name, student number, session (Face to Face or Online), ParSU email, and the cause of the referral.</p>
+        <ol class="steps" start="2">
+          <li>
+            <span class="num">2</span>
+            <div>
+              <strong>Available Schedule</strong>
+              <p>Pick a date a counselor has opened. Gray dates cannot be clicked. Use the arrows beside the month to move forward or back.</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">3</span>
+            <div>
+              <strong>Choose a time</strong>
+              <p>After the date, time buttons appear. Each one shows the hours and the session type. A green line confirms the time you selected.</p>
+            </div>
+          </li>
+        </ol>
+        <div class="legend">
+          <span><i class="dot avail"></i>Available</span>
+          <span><i class="dot sel"></i>Selected</span>
+          <span><i class="dot no"></i>Unavailable</span>
+        </div>
+        <div class="warn">
+          <p><strong>No dates yet?</strong> If the page says no counselor schedules are posted, check again later or try another service. You cannot type in your own date.</p>
+        </div>
+      </div>
+      <figure>
+        <img src="images/service.png" alt="Appointment Service list: Face to Face, Online, and Referral" />
+        <figcaption>The three appointment services.</figcaption>
+      </figure>
+    </div>
+    <div class="card under">
+      <h3>If you choose Referral</h3>
+      <p>A green box opens under the service list. It is about the other student, not about you. All of these are required, and the email must be a ParSU student address.</p>
+      <table>
+        <tbody>
+          <tr><td>Name</td><td>The student you are referring.</td></tr>
+          <tr><td>Student Number</td><td>That student’s ID number.</td></tr>
+          <tr><td>Session</td><td>Face to Face or Online. This filters the dates you can pick.</td></tr>
+          <tr><td>Gmail</td><td>Their address, ending in .pbox@parsu.edu.ph.</td></tr>
+          <tr><td>Cause of Referring</td><td>Why you are asking the office to see them.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <footer class="foot"><span><strong>PsyCheck</strong> &nbsp;Student user manual</span><span>7</span></footer>
+</section>
+
+<section class="sheet">
+  <div class="body">
+    <p class="kicker">Step 3 · Book</p>
+    <h2>Give a reason and send the request</h2>
+    <div class="split wide-photo">
+      <div>
+        <ol class="steps">
+          <li>
+            <span class="num">4</span>
+            <div>
+              <strong>Reason for Appointment</strong>
+              <p>Choose the option that fits best. This field is required.</p>
+            </div>
+          </li>
+        </ol>
+        <table>
+          <tbody>
+            <tr><td>Academic Concerns</td><td>Schoolwork, classes, or study stress.</td></tr>
+            <tr><td>Personal Concerns</td><td>Something you want to talk through privately.</td></tr>
+            <tr><td>Relationship / Social Concerns</td><td>Friends, family, or other relationships.</td></tr>
+            <tr><td>General Consultation</td><td>You want guidance and are not sure of the category.</td></tr>
+            <tr><td>Other</td><td>None of the choices above quite fits.</td></tr>
+          </tbody>
+        </table>
+        <ol class="steps" style="margin-top:3.5mm">
+          <li>
+            <span class="num">5</span>
+            <div>
+              <strong>Additional Reasons, if you want</strong>
+              <p>This box is optional. Add only what you are comfortable sharing. Leave it blank if the reason list is enough.</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">6</span>
+            <div>
+              <strong>Click Request Appointment</strong>
+              <p>The button changes to “Submitting...” while the request is saved. Do not close the page until the confirmation appears.</p>
+            </div>
+          </li>
+        </ol>
+        <div class="note">
+          <p>If a required choice is missing, PsyCheck lists it in red and scrolls to the first empty field. Fix those items, then send the request again.</p>
+        </div>
+      </div>
+      <figure>
+        <img src="images/reason.png" alt="Reason for Appointment list on the booking form" />
+        <figcaption>Reason list on the live booking form.</figcaption>
+      </figure>
+    </div>
+    <div class="two under">
+      <div class="card">
+        <h3>What gets saved</h3>
+        <ul>
+          <li>Your registered name, ID, email, and year level</li>
+          <li>The service, date, and time you selected</li>
+          <li>The reason, plus any optional note</li>
+          <li>Status: Pending, until someone reviews it</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Before you leave the page</h3>
+        <ul>
+          <li>Wait until the confirmation window appears.</li>
+          <li>Read the status. It should say Pending.</li>
+          <li>Click Okay. The next page of this guide explains that window and the email.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer class="foot"><span><strong>PsyCheck</strong> &nbsp;Student user manual</span><span>8</span></footer>
+</section>
+
+<section class="sheet">
+  <div class="body">
+    <p class="kicker">Step 4 · Wait for approval</p>
+    <h2>Your request is Pending</h2>
+    <p class="lede">A saved request is not yet a confirmed appointment. The screen tells you to wait for the administrator to review it. The status on that message is <strong>Pending</strong>.</p>
+    <div class="modal">
+      <div class="modal-card">
+        <div class="check">✓</div>
+        <h3>Your Appointment was Submitted</h3>
+        <p>Thanks. Your appointment request has been saved. Please wait for the administrator to review your request.</p>
+        <p>A no-reply confirmation was sent to your ParSU email.</p>
+        <div class="status">Appointment Status: Pending</div>
+        <div class="ok">Okay</div>
+      </div>
+    </div>
+    <p style="margin:2mm 0 0; font-size:8.5pt; color:#6b7280;">The confirmation that appears on the site after Request Appointment. Click Okay to close it.</p>
+    <div class="two">
+      <div class="card">
+        <h3>Check your email</h3>
+        <p>Look in the inbox of the ParSU address you registered with. The message comes from PsyCheck and should not be replied to.</p>
+        <p class="mail">Subject: PsyCheck appointment request received</p>
+        <p style="margin-top:2mm; margin-bottom:0">It repeats your service, date, time, and mode, and it says <strong>Status: Pending</strong>. A counselor will review the request. Also check Spam or Junk.</p>
+      </div>
+      <div class="card">
+        <h3>While you wait</h3>
+        <ul>
+          <li>Pending means the office has the request and has not confirmed it yet.</li>
+          <li>There is no separate status page. This message and the email are your record.</li>
+          <li>If the dialog says the email could not be sent, the request is still saved.</li>
+          <li>Do not create a second account for the same request.</li>
+          <li>You can log out. You do not have to leave this window open.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer class="foot"><span><strong>PsyCheck</strong> &nbsp;Student user manual</span><span>9</span></footer>
+</section>
+
+<section class="sheet">
+  <div class="body">
+    <p class="kicker">After approval</p>
+    <h2>What arrives when it is decided</h2>
+    <p class="lede">You will hear back on the same ParSU email. Read the newest PsyCheck message before you go to a session, because the schedule can change.</p>
+    <div class="two">
+      <div class="card">
+        <h3>Approved</h3>
+        <p class="mail">Subject: PsyCheck appointment approved</p>
+        <p style="margin-top:2mm">The message says your psychosocial support appointment request has been approved. It lists the service, date, time, and mode.</p>
+        <p style="margin-bottom:0">For an online session, the email may include a meeting link. Use that link at the approved time. For face to face, attend in person at the date and time in the email.</p>
+      </div>
+      <div class="card">
+        <h3>Rescheduled</h3>
+        <p class="mail">Subject: PsyCheck appointment rescheduled</p>
+        <p style="margin-top:2mm">A counselor saved a new schedule. The message shows the updated date and time, and the status is <strong>Rescheduled</strong>.</p>
+        <p style="margin-bottom:0">Follow the new details, not the time you first requested. An online session may include a new meeting link.</p>
+      </div>
+    </div>
+    <h3 style="margin-top:5mm">If something does not work</h3>
+    <table>
+      <thead>
+        <tr><th>What you see</th><th>What to do</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Invalid email or password</td><td>Check the ParSU address and password. Use the eye icon. Stay on Login as Student.</td></tr>
+        <tr><td>Registered as student, not counselor</td><td>You chose a staff role. Select Student, then log in again.</td></tr>
+        <tr><td>No schedules are posted</td><td>A counselor has not opened that service yet. Try another service, or check back later.</td></tr>
+        <tr><td>Please fill out these required fields</td><td>Service, date, time, and reason are required. Referral also needs the other student’s details.</td></tr>
+        <tr><td>Email could not be sent</td><td>The appointment request is still saved as Pending. Tell the office if you need them to confirm they received it.</td></tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <p><strong>If you need help sooner than an appointment.</strong> Do not wait on a Pending request when someone is in immediate danger. Contact campus security or local emergency services. The form also reminds you that your information is handled under your school’s privacy rules.</p>
+    </div>
+  </div>
+  <footer class="foot"><span><strong>PsyCheck</strong> &nbsp;Student user manual</span><span>10</span></footer>
+</section>
+
+</body>
+</html>
