@@ -673,7 +673,7 @@ export default function AdminDashboard() {
 
         {/* SIDEBAR */}
 
-        <aside className="hidden w-64 shrink-0 self-start border-r border-gray-200 bg-white p-5 md:sticky md:top-20 md:block md:h-[calc(100vh-5rem)] md:overflow-y-auto">
+        <aside className="hidden min-h-[calc(100vh-80px)] w-64 shrink-0 border-r border-gray-200 bg-white p-5 md:block">
 
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
             Administration
