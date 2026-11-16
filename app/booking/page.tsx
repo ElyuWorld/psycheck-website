@@ -377,8 +377,8 @@ export default function BookingPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-white">
-      <header className="w-full border-b border-gray-100 bg-white">
+    <main className="min-h-screen bg-white">
+      <header className="fixed inset-x-0 top-0 z-40 w-full border-b border-gray-100 bg-white">
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 md:h-20 md:px-6">
           <div className="flex min-w-0 items-center">
             <Image
@@ -421,7 +421,9 @@ export default function BookingPage() {
         </nav>
       </header>
 
-      <section className="bg-[#f7faf8] px-4 py-8 md:px-6 md:py-14">
+      <div className="h-16 md:h-20" aria-hidden="true" />
+
+      <section className="overflow-x-hidden bg-[#f7faf8] px-4 py-8 md:px-6 md:py-14">
         <div className="mx-auto max-w-4xl">
           <div className="mb-8 text-center md:mb-10">
             <h2 className="text-2xl font-semibold text-gray-900 md:text-3xl">
