@@ -129,9 +129,14 @@ export default function BookingPage() {
     [slots, service, referralSession]
   );
 
+  const bookableSlots = useMemo(
+    () => visibleSlots.filter((slot) => isUpcomingDate(slot.date)),
+    [visibleSlots]
+  );
+
   const slotsForSelectedDate = useMemo(
-    () => visibleSlots.filter((slot) => slot.date === selectedDate),
-    [visibleSlots, selectedDate]
+    () => bookableSlots.filter((slot) => slot.date === selectedDate),
+    [bookableSlots, selectedDate]
   );
 
   const selectedSlot =
@@ -713,16 +718,15 @@ export default function BookingPage() {
                   </p>
                 )}
 
-              {visibleSlots.length === 0 ? (
+              {bookableSlots.length === 0 ? (
                 <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  {slots.length === 0
-                    ? "No counselor schedules are posted yet. Please check back later."
-                    : "No available dates for this appointment type. Try another type, or wait for a counselor to add a matching schedule."}
+                  No available dates for this appointment type. Try another
+                  type, or wait for a counselor to add a matching schedule.
                 </div>
               ) : (
                 <BookingCalendar
                   availableDates={
-                    new Set(visibleSlots.map((slot) => slot.date))
+                    new Set(bookableSlots.map((slot) => slot.date))
                   }
                   selectedDate={selectedDate}
                   onSelectDate={(date) => {
@@ -1020,6 +1024,12 @@ function getMissingRequiredFields({
   }
 
   return missing;
+}
+
+function isUpcomingDate(date: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(`${date}T00:00:00`) >= today;
 }
 
 function slotMatchesService(
