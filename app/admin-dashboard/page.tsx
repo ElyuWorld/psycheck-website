@@ -603,11 +603,11 @@ export default function AdminDashboard() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7faf8] text-gray-900">
+    <main className="min-h-screen bg-[#f7faf8] text-gray-900">
 
       {/* HEADER */}
 
-      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-gray-200 bg-white">
 
         <div className="flex h-16 items-center justify-between px-4 md:h-20 md:px-8">
 
@@ -663,6 +663,8 @@ export default function AdminDashboard() {
         </div>
 
       </header>
+
+      <div className="h-16 md:h-20" aria-hidden="true" />
 
 
       {/* SIDEBAR */}
@@ -744,7 +746,7 @@ export default function AdminDashboard() {
 
         {/* MAIN */}
 
-        <section className="mx-auto min-w-0 max-w-[1500px] p-4 pb-24 md:p-8 md:pb-8">
+        <section className="mx-auto min-w-0 max-w-[1500px] overflow-x-hidden p-4 pb-24 md:p-8 md:pb-8">
 
           {showAppointment && (
             <AppointmentDetails
