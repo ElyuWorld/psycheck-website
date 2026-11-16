@@ -611,10 +611,7 @@ export default function AdminDashboard() {
 
         <div className="flex h-16 items-center justify-between px-4 md:h-20 md:px-8">
 
-          <Link
-            href="/"
-            className="flex items-center"
-          >
+          <div className="flex items-center">
 
             <Image
               src="/logo.png"
@@ -637,7 +634,7 @@ export default function AdminDashboard() {
 
             </div>
 
-          </Link>
+          </div>
 
 
           <div className="flex items-center gap-4">
