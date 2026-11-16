@@ -144,7 +144,8 @@ export default function AdminDashboard() {
       supabase
         .from("availability")
         .select("*")
-        .order("date", { ascending: true }),
+        .order("date", { ascending: false })
+        .order("start_time", { ascending: true }),
       supabase
         .from("profiles")
         .select("*")
@@ -180,6 +181,12 @@ export default function AdminDashboard() {
     setAvailability(
       (availabilityRes.data || [])
         .filter((row) => row.counselor_id)
+        .sort((a, b) => {
+          const dateA = String(a.date).slice(0, 10);
+          const dateB = String(b.date).slice(0, 10);
+          if (dateA !== dateB) return dateB.localeCompare(dateA);
+          return String(a.start_time).localeCompare(String(b.start_time));
+        })
         .map(toAvailabilityView)
     );
     setStudents(registeredStudents);
@@ -200,6 +207,11 @@ export default function AdminDashboard() {
   async function createSchedule() {
     if (!date || !startTime || !endTime) {
       setMessage("Please complete all schedule fields.");
+      return;
+    }
+
+    if (date < todayDateInputValue()) {
+      setMessage("Please choose today or a future date.");
       return;
     }
 
@@ -661,7 +673,7 @@ export default function AdminDashboard() {
 
         {/* SIDEBAR */}
 
-        <aside className="hidden min-h-[calc(100vh-80px)] w-64 border-r border-gray-200 bg-white p-5 md:block">
+        <aside className="hidden w-64 shrink-0 self-start border-r border-gray-200 bg-white p-5 md:sticky md:top-20 md:block md:h-[calc(100vh-5rem)] md:overflow-y-auto">
 
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
             Administration
@@ -1284,6 +1296,7 @@ export default function AdminDashboard() {
                       <input
                         type="date"
                         value={date}
+                        min={todayDateInputValue()}
                         onChange={(e) =>
                           setDate(e.target.value)
                         }
@@ -2102,6 +2115,14 @@ function Analytics({
 /* ============================================================
    APPOINTMENT DETAILS
 ============================================================ */
+
+function todayDateInputValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function toDateInputValue(displayDate: string) {
   const parsed = new Date(displayDate);

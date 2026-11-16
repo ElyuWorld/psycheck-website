@@ -162,8 +162,8 @@ export default function Login() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
       setLoading(false);
       return;
     }
@@ -461,11 +461,11 @@ export default function Login() {
                   Password
                 </label>
                 <PasswordInput
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   value={password}
                   onChange={setPassword}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
 
@@ -478,7 +478,7 @@ export default function Login() {
                   value={confirmPassword}
                   onChange={setConfirmPassword}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
 
