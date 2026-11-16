@@ -7,7 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 import {
   SERVICE_LABELS,
   formatDisplayTime,
+  toAppointmentView,
   type AppointmentMode,
+  type AppointmentStatus,
+  type AppointmentView,
   type Availability,
 } from "@/lib/types";
 import {
@@ -45,6 +48,7 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlotId, setSelectedSlotId] = useState("");
   const [attempted, setAttempted] = useState(false);
+  const [history, setHistory] = useState<AppointmentView[]>([]);
 
   useEffect(() => {
     async function checkAuth() {
@@ -86,6 +90,14 @@ export default function BookingPage() {
           email: profile.email || user.email || "",
           yearLevel: profile.year_level || "",
         });
+
+        const { data: historyData } = await supabase
+          .from("appointments")
+          .select("*")
+          .eq("student_user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        setHistory((historyData || []).map(toAppointmentView));
 
         const { data: availabilityData, error: availabilityError } =
           await supabase
@@ -175,6 +187,21 @@ export default function BookingPage() {
 
   function fieldClass(id: string) {
     return bookingInputClass(attempted && missingIds.has(id));
+  }
+
+  async function loadHistory(studentUserId: string) {
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("appointments")
+        .select("*")
+        .eq("student_user_id", studentUserId)
+        .order("created_at", { ascending: false });
+
+      setHistory((data || []).map(toAppointmentView));
+    } catch {
+      // Keep the booking form usable even if history cannot load.
+    }
   }
 
   async function handleLogout() {
@@ -364,6 +391,7 @@ export default function BookingPage() {
       setSelectedSlotId("");
       setAttempted(false);
       setShowAlert(true);
+      await loadHistory(user.id);
     } catch (err) {
       const messageText =
         err instanceof Error ? err.message : "Failed to submit appointment.";
@@ -887,6 +915,58 @@ export default function BookingPage() {
               </div>
             </form>
           </div>
+
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:p-8">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Appointment History
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Your previous and current appointment requests.
+            </p>
+
+            {history.length === 0 ? (
+              <p className="mt-5 text-sm text-gray-500">
+                You have not requested an appointment yet.
+              </p>
+            ) : (
+              <div className="mt-5 divide-y divide-gray-100 rounded-xl border border-gray-100">
+                {history.map((appointment) => (
+                  <div key={appointment.id} className="p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {appointment.appointmentType}
+                        </p>
+                        <p className="mt-1 text-sm text-gray-600">
+                          {appointment.date} · {appointment.time}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {appointment.mode === "Online"
+                            ? "Online"
+                            : "Face to Face"}
+                          {appointment.reason
+                            ? ` · ${reasonLabel(appointment.reason)}`
+                            : ""}
+                        </p>
+                      </div>
+                      <HistoryStatusBadge status={appointment.status} />
+                    </div>
+
+                    {appointment.meetingLink && (
+                      <a
+                        href={appointment.meetingLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex text-sm font-medium text-[#087f3e] hover:underline"
+                      >
+                        Open meeting link
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -943,6 +1023,40 @@ export default function BookingPage() {
         </div>
       )}
     </main>
+  );
+}
+
+function reasonLabel(reason: string) {
+  const labels: Record<string, string> = {
+    academic: "Academic Concerns",
+    personal: "Personal Concerns",
+    relationships: "Relationship / Social Concerns",
+    general: "General Consultation",
+    other: "Other",
+  };
+
+  return labels[reason] || reason;
+}
+
+function HistoryStatusBadge({
+  status,
+}: {
+  status: AppointmentStatus;
+}) {
+  const styles = {
+    Pending: "bg-yellow-50 text-yellow-700",
+    Confirmed: "bg-blue-50 text-blue-700",
+    Rescheduled: "bg-orange-50 text-orange-700",
+    Completed: "bg-green-50 text-green-700",
+    Cancelled: "bg-red-50 text-red-700",
+  };
+
+  return (
+    <span
+      className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${styles[status]}`}
+    >
+      {status}
+    </span>
   );
 }
 
