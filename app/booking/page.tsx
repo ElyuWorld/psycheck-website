@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -381,7 +380,7 @@ export default function BookingPage() {
     <main className="min-h-screen overflow-x-hidden bg-white">
       <header className="w-full border-b border-gray-100 bg-white">
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 md:h-20 md:px-6">
-          <Link href="/" className="flex min-w-0 items-center">
+          <div className="flex min-w-0 items-center">
             <Image
               src="/logo.png"
               alt="PsyCheck Logo"
@@ -393,7 +392,7 @@ export default function BookingPage() {
             <div className="ml-3 min-w-0">
               <h1 className="text-lg font-semibold text-[#087f3e]">PsyCheck</h1>
             </div>
-          </Link>
+          </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             {student && (
@@ -411,12 +410,6 @@ export default function BookingPage() {
               </div>
             )}
 
-            <Link
-              href="/"
-              className="rounded-lg border border-[#087f3e] px-3 py-2 text-xs font-medium text-[#087f3e] transition hover:bg-green-50 sm:px-4 sm:py-2.5 sm:text-sm"
-            >
-              Home
-            </Link>
             <button
               type="button"
               onClick={handleLogout}
