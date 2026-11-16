@@ -737,18 +737,6 @@ export default function AdminDashboard() {
             Student Analytics
           </NavButton>
 
-
-          <div className="my-6 border-t border-gray-100" />
-
-
-          <Link
-            href="/"
-            className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-gray-600 hover:bg-gray-50"
-          >
-            <HomeIcon />
-            Back to Website
-          </Link>
-
         </aside>
 
 
@@ -3259,19 +3247,4 @@ function VideoIcon() {
 }
 
 
-function HomeIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V10Z" />
-      <path d="M9 21v-7h6v7" />
-    </svg>
-  );
-}
 
