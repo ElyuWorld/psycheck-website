@@ -1,0 +1,13 @@
+---
+description: Commit and push to main after each completed code change so Vercel deploys
+alwaysApply: true
+---
+
+# Auto push after work
+
+After finishing requested code or UI changes, commit the relevant files and `git push origin HEAD` to `main` so Vercel deploys. Do not wait for a separate "deploy" or "push" prompt.
+
+- Use a short commit message in this repo's existing style (why, not a file dump).
+- Never commit `.env.local`, secrets, `.vscode/`, or unrelated local files.
+- Skip commit/push when the prompt was only a question or there is nothing to commit.
+- Do not force-push or skip git hooks.
