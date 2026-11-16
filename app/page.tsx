@@ -41,9 +41,9 @@ export default function Home() {
   }, [menuOpen]);
 
   return (
-    <main id="top" className="min-h-screen overflow-x-hidden bg-[#f4fbf7] text-gray-900">
+    <main id="top" className="min-h-screen bg-[#f4fbf7] text-gray-900">
       <header
-        className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+        className={`fixed inset-x-0 top-0 z-50 w-full transition-all duration-300 ${
           scrolled
             ? "border-b border-emerald-100/80 bg-white/90 shadow-sm backdrop-blur-md"
             : "border-b border-transparent bg-transparent"
@@ -160,6 +160,8 @@ export default function Home() {
           </div>
         )}
       </header>
+
+      <div className="h-16 md:h-20" aria-hidden="true" />
 
       {/* Hero */}
       <section className="relative isolate overflow-hidden">
