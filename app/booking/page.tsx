@@ -671,6 +671,8 @@ export default function BookingPage() {
                 </div>
               )}
 
+              {service && (
+                <>
               <div id="schedule-date">
                 <h3 className="text-lg font-semibold text-gray-900">
                   Available Schedule
@@ -784,6 +786,8 @@ export default function BookingPage() {
                   {formatDisplayTime(selectedSlot.end_time)} ({selectedSlot.mode}
                   )
                 </div>
+              )}
+                </>
               )}
 
               <div>
@@ -1000,11 +1004,11 @@ function getMissingRequiredFields({
     }
   }
 
-  if (!selectedDate) {
+  if (service && !selectedDate) {
     missing.push({ id: "schedule-date", label: "Available date" });
   }
 
-  if (!selectedSlotId) {
+  if (service && !selectedSlotId) {
     missing.push({
       id: selectedDate ? "schedule-time" : "schedule-date",
       label: "Available time",
