@@ -668,12 +668,9 @@ export default function AdminDashboard() {
       </header>
 
 
-      <div className="mx-auto flex max-w-[1500px]">
+      {/* SIDEBAR */}
 
-
-        {/* SIDEBAR */}
-
-        <aside className="hidden min-h-[calc(100vh-80px)] w-64 shrink-0 border-r border-gray-200 bg-white p-5 md:block">
+      <aside className="hidden border-r border-gray-200 bg-white p-5 md:fixed md:bottom-0 md:left-0 md:top-20 md:z-30 md:block md:w-64 md:overflow-y-auto">
 
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
             Administration
@@ -758,9 +755,11 @@ export default function AdminDashboard() {
         </aside>
 
 
+      <div className="md:pl-64">
+
         {/* MAIN */}
 
-        <section className="min-w-0 flex-1 p-4 pb-24 md:p-8 md:pb-8">
+        <section className="mx-auto min-w-0 max-w-[1500px] p-4 pb-24 md:p-8 md:pb-8">
 
           {showAppointment && (
             <AppointmentDetails
